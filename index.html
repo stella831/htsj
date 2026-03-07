@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>htsj 物业合同审计比对系统</title>
-    <!-- 仅在线引入核心工具库，无需本地安装任何软件 -->
     <script src="https://cdn.jsdelivr.net/npm/diff-match-patch@1.0.5/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- 导出功能依赖：压缩包、PDF生成 -->
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
@@ -37,8 +35,8 @@
         .header p {
             color: #656d76;
             font-size: 14px;
+            line-height: 1.5;
         }
-        /* 导航菜单 */
         .nav {
             display: flex;
             gap: 3px;
@@ -65,7 +63,6 @@
             border-bottom: 1px solid white;
             margin-bottom: -1px;
         }
-        /* 页面容器 */
         .page {
             display: none;
             background: white;
@@ -83,7 +80,6 @@
             font-size: 16px;
             font-weight: 600;
         }
-        /* 按钮工具栏 */
         .toolbar {
             display: flex;
             gap: 8px;
@@ -140,7 +136,6 @@
             opacity: 0.6;
             cursor: not-allowed;
         }
-        /* 输入区域 */
         .input-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -170,7 +165,6 @@
         .input-box textarea {
             min-height: 180px;
         }
-        /* 表格样式 */
         .table-wrapper {
             overflow-x: auto;
             width: 100%;
@@ -201,7 +195,6 @@
         table tr.highlight-row {
             background-color: #fff8c5;
         }
-        /* 筛选区域 */
         .filter-box {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -228,7 +221,6 @@
             border-radius: 6px;
             font-size: 12px;
         }
-        /* 统计卡片 */
         .stats-panel {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -253,7 +245,6 @@
         }
         .stats-card.danger .num { color: #cf222e; }
         .stats-card.warning .num { color: #bf8700; }
-        /* 复选框组 */
         .checkbox-group {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -279,7 +270,6 @@
             color: #24292f;
             cursor: pointer;
         }
-        /* 导出进度条 */
         .progress-box {
             display: none;
             margin-bottom: 15px;
@@ -307,7 +297,6 @@
             color: #656d76;
             margin-top: 4px;
         }
-        /* 差异高亮样式 */
         .diff-add {
             background-color: #d4f8e8;
             color: #116329;
@@ -340,7 +329,6 @@
             background-color: #ddf4ff;
             color: #0969da;
         }
-        /* 报告内容区 */
         .report-content {
             width: 100%;
             min-height: 300px;
@@ -352,7 +340,6 @@
             white-space: pre-wrap;
             font-family: 'SFMono-Regular', Consolas, monospace;
         }
-        /* 导入提示框 */
         .tips-box {
             padding: 12px;
             border-radius: 6px;
@@ -362,7 +349,6 @@
             margin-bottom: 15px;
             line-height: 1.5;
         }
-        /* 隐藏的PDF渲染容器 */
         #pdfRenderBox {
             position: absolute;
             left: -9999px;
@@ -371,7 +357,6 @@
             padding: 40px;
             background: white;
         }
-        /* 响应式适配 */
         @media (max-width: 768px) {
             .input-grid, .filter-box, .stats-panel {
                 grid-template-columns: 1fr;
@@ -388,7 +373,6 @@
         <p>合同台账管理 | 合规性核查 | 违规操作排查 | 差异比对 | 审计报告生成 | 底稿批量归档</p>
     </div>
 
-    <!-- 导航栏 -->
     <div class="nav">
         <div class="nav-item active" data-page="ledger">合同台账管理</div>
         <div class="nav-item" data-page="compare">制度合规比对</div>
@@ -399,11 +383,9 @@
         <div class="nav-item" data-page="tools">通用文本比对</div>
     </div>
 
-    <!-- 1. 合同台账管理页面（核心修复+新增导入控件） -->
     <div class="page active" id="page-ledger">
         <h2 class="page-title">物业合同台账管理</h2>
         
-        <!-- 新增：Excel台账导入控件 -->
         <div class="tips-box">
             <strong>导入说明：</strong>Excel需包含列名：供应商名称、项目名称、合同类型（新签/续签）、签订时间、合同金额（元）、合同单价、市场对标均价、三方比价（是/否）、审批流程（是/否）
         </div>
@@ -414,7 +396,6 @@
             <button class="btn btn-default" onclick="exportLedger()">导出台账Excel</button>
         </div>
 
-        <!-- 统计卡片 -->
         <div class="stats-panel">
             <div class="stats-card">
                 <div class="num" id="totalContract">0</div>
@@ -434,7 +415,6 @@
             </div>
         </div>
 
-        <!-- 筛选区域 -->
         <h3 class="page-title" style="font-size: 14px; margin-bottom: 10px;">台账筛选</h3>
         <div class="filter-box">
             <div class="filter-item">
@@ -465,7 +445,6 @@
             </div>
         </div>
 
-        <!-- 工具栏 -->
         <div class="toolbar">
             <button class="btn btn-primary" onclick="filterLedger()">筛选查询</button>
             <button class="btn btn-default" onclick="resetFilter()">重置筛选</button>
@@ -473,7 +452,6 @@
             <button class="btn btn-danger" onclick="focusPriceRisk()">仅看价格异常风险项</button>
         </div>
 
-        <!-- 合同台账表格 -->
         <h3 class="page-title" style="font-size: 14px; margin-bottom: 10px;">合同台账明细</h3>
         <div class="table-wrapper">
             <table id="ledgerTable">
@@ -502,7 +480,6 @@
             </table>
         </div>
 
-        <!-- 台账编辑区域 -->
         <h3 class="page-title" style="font-size: 14px; margin-bottom: 10px;">自定义台账数据</h3>
         <div class="input-box">
             <label>台账JSON数据（导入Excel后自动更新，也可手动修改）</label>
@@ -514,7 +491,6 @@
         </div>
     </div>
 
-    <!-- 2. 制度合规比对页面 -->
     <div class="page" id="page-compare">
         <h2 class="page-title">制度合规比对核查</h2>
         <p style="margin-bottom: 15px; color: #656d76; font-size: 13px;">左侧粘贴公司制度条款（审计基准），右侧粘贴合同/审批底稿，自动识别不合规操作</p>
@@ -557,7 +533,6 @@
         </div>
     </div>
 
-    <!-- 3. 价格合理性比对页面 -->
     <div class="page" id="page-price">
         <h2 class="page-title">合同价格合理性比对排查</h2>
         <p style="margin-bottom: 15px; color: #656d76; font-size: 13px;">比对合同价格与市场均价，自动识别价格异常偏高项，排查虚高报价风险</p>
@@ -591,7 +566,6 @@
         </div>
     </div>
 
-    <!-- 4. 违规风险管理页面 -->
     <div class="page" id="page-risk">
         <h2 class="page-title">审计违规风险点管理</h2>
         <div class="toolbar">
@@ -622,7 +596,6 @@
         </div>
     </div>
 
-    <!-- 5. 审计报告生成页面 -->
     <div class="page" id="page-report">
         <h2 class="page-title">专项审计报告自动生成</h2>
         <p style="margin-bottom: 15px; color: #656d76; font-size: 13px;">自动填充台账统计、核查结果、风险点，生成正式专项审计报告</p>
@@ -638,7 +611,6 @@
         </div>
     </div>
 
-    <!-- 6. 底稿归档导出页面 -->
     <div class="page" id="page-archive">
         <h2 class="page-title">审计底稿全量归档导出</h2>
         <p style="margin-bottom: 15px; color: #656d76; font-size: 13px;">一键导出全量审计底稿，自动生成 word/excel/pdf 三类文件，打包为分类压缩包</p>
@@ -679,7 +651,6 @@
             </div>
         </div>
 
-        <!-- 导出进度条 -->
         <div class="progress-box" id="progressBox">
             <div class="progress-title">正在生成底稿文件，请稍候...</div>
             <div class="progress-bar">
@@ -725,7 +696,6 @@
         </div>
     </div>
 
-    <!-- 7. 通用文本比对页面 -->
     <div class="page" id="page-tools">
         <h2 class="page-title">通用文本比对工具</h2>
         <div class="input-grid">
@@ -748,12 +718,10 @@
         <div id="textDiffResult" class="report-content" style="min-height: 200px;">请输入文本后点击「立即比对」查看差异</div>
     </div>
 
-    <!-- 隐藏的PDF渲染容器 -->
     <div id="pdfRenderBox"></div>
 
     <script>
         const dmp = new diff_match_patch();
-        // 默认内置合同台账模板
         const defaultLedger = [
             {
                 id: 1,
@@ -841,7 +809,6 @@
             }
         ];
 
-        // 全局数据存储
         let auditData = {
             projectName: "物业维保、工程类供应商合同合规专项审计",
             ledger: [],
@@ -851,9 +818,7 @@
             auditReport: ""
         };
 
-        // 页面初始化
         window.onload = function() {
-            // 导航切换
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.addEventListener('click', function() {
                     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
@@ -863,7 +828,6 @@
                 });
             });
 
-            // 加载本地存储的数据
             const localData = localStorage.getItem('htsj_audit_data');
             if (localData) {
                 try {
@@ -878,19 +842,15 @@
                 auditData.ledger = JSON.parse(JSON.stringify(defaultLedger));
             }
 
-            // 初始化台账页面
             initLedgerPage();
             refreshRiskTable();
             saveData();
         };
 
-        // 保存数据到本地
         function saveData() {
             localStorage.setItem('htsj_audit_data', JSON.stringify(auditData));
         }
 
-        // ========== 核心：合同台账管理功能（修复+新增导入） ==========
-        // 初始化台账页面
         function initLedgerPage() {
             processLedgerData();
             renderLedgerTable();
@@ -899,7 +859,6 @@
             document.getElementById('ledgerJson').value = JSON.stringify(auditData.ledger, null, 2);
         }
 
-        // 处理台账数据
         function processLedgerData() {
             const supplierCount = {};
             auditData.ledger.forEach(item => {
@@ -917,7 +876,6 @@
             });
         }
 
-        // 渲染台账表格
         function renderLedgerTable(filterData = null) {
             const tbody = document.querySelector('#ledgerTable tbody');
             const showData = filterData || auditData.ledger;
@@ -957,7 +915,6 @@
             tbody.innerHTML = html;
         }
 
-        // 更新统计卡片
         function updateLedgerStats() {
             const totalContract = auditData.ledger.length;
             const supplierList = [...new Set(auditData.ledger.map(item => item.supplier))];
@@ -973,7 +930,6 @@
             document.getElementById('priceRiskCount').textContent = priceRiskCount;
         }
 
-        // 初始化筛选下拉框
         function initFilterSelect() {
             const supplierSelect = document.getElementById('filterSupplier');
             const supplierList = [...new Set(auditData.ledger.map(item => item.supplier))];
@@ -985,7 +941,6 @@
             supplierSelect.innerHTML = optionHtml;
         }
 
-        // 新增：Excel台账导入功能
         function handleImportLedger() {
             const file = document.getElementById('ledgerFile').files[0];
             if (!file) return;
@@ -1003,7 +958,6 @@
                         return;
                     }
 
-                    // 格式化导入的数据
                     const formatData = jsonData.map((item, index) => {
                         return {
                             id: index + 1,
@@ -1019,7 +973,6 @@
                         };
                     });
 
-                    // 替换当前台账
                     auditData.ledger = formatData;
                     initLedgerPage();
                     saveData();
@@ -1031,7 +984,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // 下载导入模板
         function exportLedgerTemplate() {
             const templateData = [
                 {
@@ -1052,7 +1004,6 @@
             XLSX.writeFile(workbook, `htsj合同台账导入模板.xlsx`);
         }
 
-        // 筛选台账
         function filterLedger() {
             const supplier = document.getElementById('filterSupplier').value;
             const type = document.getElementById('filterType').value;
@@ -1073,11 +1024,9 @@
             }
 
             renderLedgerTable(filterData);
-            // 筛选后自动滚动到表格
             document.querySelector('#ledgerTable').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // 重置筛选
         function resetFilter() {
             document.getElementById('filterSupplier').value = '';
             document.getElementById('filterType').value = '';
@@ -1086,19 +1035,16 @@
             renderLedgerTable();
         }
 
-        // 仅看重复合作供应商
         function focusRepeatSupplier() {
             document.getElementById('filterFocus').value = '1';
             filterLedger();
         }
 
-        // 仅看价格异常风险项
         function focusPriceRisk() {
             document.getElementById('filterFocus').value = '2';
             filterLedger();
         }
 
-        // 导出台账Excel
         function exportLedger() {
             const worksheet = XLSX.utils.json_to_sheet(auditData.ledger);
             const workbook = XLSX.utils.book_new();
@@ -1106,7 +1052,6 @@
             XLSX.writeFile(workbook, `htsj物业合同台账_${getDateStr()}.xlsx`);
         }
 
-        // 保存自定义台账
         function saveCustomLedger() {
             try {
                 const customLedger = JSON.parse(document.getElementById('ledgerJson').value);
@@ -1123,7 +1068,6 @@
             }
         }
 
-        // 恢复默认模板台账
         function resetDefaultLedger() {
             if (confirm('确定要恢复默认模板台账吗？你的自定义数据将被覆盖')) {
                 auditData.ledger = JSON.parse(JSON.stringify(defaultLedger));
@@ -1132,7 +1076,6 @@
             }
         }
 
-        // ========== 制度合规比对功能 ==========
         function checkCompliance() {
             const systemText = document.getElementById('systemText').value;
             const contractText = document.getElementById('contractText').value;
@@ -1182,7 +1125,6 @@
             saveData();
         }
 
-        // 将违规点加入风险清单
         function addRiskToManage() {
             const rows = document.querySelectorAll('#complianceResult tbody tr');
             if (rows.length === 0 || rows[0].querySelector('td').colSpan) {
@@ -1215,7 +1157,6 @@
             alert(`成功添加 ${addCount} 个违规风险点到风险清单`);
         }
 
-        // 清空比对输入
         function clearCompareInput() {
             document.getElementById('systemText').value = '';
             document.getElementById('contractText').value = '';
@@ -1228,7 +1169,6 @@
             saveData();
         }
 
-        // ========== 价格合理性比对功能 ==========
         function handlePriceFile() {
             const file = document.getElementById('priceFile').files[0];
             if (!file) return;
@@ -1329,7 +1269,6 @@
             saveData();
         }
 
-        // ========== 风险点管理功能 ==========
         function refreshRiskTable() {
             const tbody = document.querySelector('#riskTable tbody');
             if (auditData.riskList.length === 0) {
@@ -1374,4 +1313,39 @@
             const riskNo = 'RISK-' + String(auditData.riskList.length + 1).padStart(3, '0');
             auditData.riskList.push({
                 no: riskNo,
-                type: type || '
+                type: type || '其他',
+                desc: desc,
+                level: level || '中',
+                contract: '',
+                status: '待整改'
+            });
+
+            refreshRiskTable();
+            saveData();
+        }
+
+        function exportRiskList() {
+            if (auditData.riskList.length === 0) {
+                alert('暂无风险点数据可导出');
+                return;
+            }
+            const worksheet = XLSX.utils.json_to_sheet(auditData.riskList);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, '审计风险清单');
+            XLSX.writeFile(workbook, `htsj审计风险清单_${getDateStr()}.xlsx`);
+        }
+
+        function clearAllRisk() {
+            if (confirm('确定要清空所有风险点数据吗？此操作不可恢复')) {
+                auditData.riskList = [];
+                refreshRiskTable();
+                saveData();
+            }
+        }
+
+        function generateAuditReport() {
+            const totalContract = auditData.ledger.length;
+            const supplierList = [...new Set(auditData.ledger.map(item => item.supplier))];
+            const totalSupplier = supplierList.length;
+            const repeatSupplier = supplierList.filter(supplier => {
+                return auditData.ledger.filter(item => item.supplier === supplier).length >= 

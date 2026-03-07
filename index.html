@@ -142,9 +142,8 @@
             color: #24292f;
             font-size: 14px;
         }
-        .input-box textarea {
+        .input-box textarea, .input-box input {
             width: 100%;
-            height: 220px;
             padding: 12px;
             border: 1px solid #d1d9e0;
             border-radius: 6px;
@@ -152,6 +151,9 @@
             line-height: 1.5;
             resize: vertical;
             font-family: 'SFMono-Regular', Consolas, monospace;
+        }
+        .input-box textarea {
+            min-height: 220px;
         }
         /* 表格样式 */
         .table-wrapper {
@@ -176,6 +178,36 @@
             font-weight: 600;
             position: sticky;
             top: 0;
+        }
+        table tr.highlight-row {
+            background-color: #fff8c5;
+        }
+        /* 筛选区域 */
+        .filter-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #d1d9e0;
+            border-radius: 6px;
+            background-color: #fafbfc;
+        }
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .filter-item label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #24292f;
+        }
+        .filter-item select, .filter-item input {
+            padding: 8px 10px;
+            border: 1px solid #d1d9e0;
+            border-radius: 6px;
+            font-size: 13px;
         }
         /* 复选框组 */
         .checkbox-group {
@@ -230,6 +262,31 @@
             color: #656d76;
             margin-top: 5px;
         }
+        /* 统计卡片 */
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stats-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #d1d9e0;
+        }
+        .stats-card .num {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #0969da;
+        }
+        .stats-card .label {
+            font-size: 14px;
+            color: #656d76;
+        }
+        .stats-card.danger .num { color: #cf222e; }
+        .stats-card.warning .num { color: #bf8700; }
         /* 差异高亮样式 */
         .diff-add {
             background-color: #d4f8e8;
@@ -286,7 +343,7 @@
         }
         /* 响应式适配 */
         @media (max-width: 768px) {
-            .input-grid {
+            .input-grid, .filter-box, .stats-panel {
                 grid-template-columns: 1fr;
             }
             .checkbox-group {
@@ -298,12 +355,13 @@
 <body>
     <div class="header">
         <h1>htsj 物业维保&工程合同审计比对系统</h1>
-        <p>合规性核查 | 违规操作排查 | 差异比对 | 审计报告生成 | 底稿批量归档</p>
+        <p>合同台账管理 | 合规性核查 | 违规操作排查 | 差异比对 | 审计报告生成 | 底稿批量归档</p>
     </div>
 
     <!-- 导航栏 -->
     <div class="nav">
-        <div class="nav-item active" data-page="compare">制度合规比对（核心）</div>
+        <div class="nav-item active" data-page="ledger">合同台账管理（新增）</div>
+        <div class="nav-item" data-page="compare">制度合规比对（核心）</div>
         <div class="nav-item" data-page="price">价格合理性比对</div>
         <div class="nav-item" data-page="risk">违规风险管理</div>
         <div class="nav-item" data-page="report">审计报告生成</div>
@@ -311,8 +369,113 @@
         <div class="nav-item" data-page="tools">通用文本比对</div>
     </div>
 
-    <!-- 1. 制度合规比对页面（核心功能） -->
-    <div class="page active" id="page-compare">
+    <!-- 1. 新增：合同台账管理页面（内置核心） -->
+    <div class="page active" id="page-ledger">
+        <h2 class="page-title">物业合同台账管理（内置审计底稿）</h2>
+        <p style="margin-bottom: 20px; color: #656d76;">系统已内置合同台账模板，自动统计重复供应商、价格差异率，一键锁定重点核查对象，所有数据直接作为审计底稿</p>
+        
+        <!-- 统计卡片 -->
+        <div class="stats-panel">
+            <div class="stats-card">
+                <div class="num" id="totalContract">0</div>
+                <div class="label">合同总数量</div>
+            </div>
+            <div class="stats-card">
+                <div class="num" id="totalSupplier">0</div>
+                <div class="label">供应商总数</div>
+            </div>
+            <div class="stats-card warning">
+                <div class="num" id="repeatSupplier">0</div>
+                <div class="label">重复合作供应商</div>
+            </div>
+            <div class="stats-card danger">
+                <div class="num" id="priceRiskCount">0</div>
+                <div class="label">价格异常风险项</div>
+            </div>
+        </div>
+
+        <!-- 筛选区域 -->
+        <h3 class="page-title" style="font-size: 16px; margin-bottom: 15px;">台账筛选</h3>
+        <div class="filter-box">
+            <div class="filter-item">
+                <label>供应商筛选</label>
+                <select id="filterSupplier">
+                    <option value="">全部供应商</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>合同类型筛选</label>
+                <select id="filterType">
+                    <option value="">全部合同类型</option>
+                    <option value="新签">新签</option>
+                    <option value="续签">续签</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>重点核查筛选</label>
+                <select id="filterFocus">
+                    <option value="">全部合同</option>
+                    <option value="1">重复合作供应商</option>
+                    <option value="2">价格异常偏高</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>关键词搜索</label>
+                <input type="text" id="filterKeyword" placeholder="输入项目/供应商关键词搜索">
+            </div>
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="filterLedger()">筛选查询</button>
+            <button class="btn btn-success" onclick="resetFilter()">重置筛选</button>
+            <button class="btn btn-warning" onclick="focusRepeatSupplier()">仅看重复合作供应商</button>
+            <button class="btn btn-danger" onclick="focusPriceRisk()">仅看价格异常风险项</button>
+            <button class="btn btn-default" onclick="exportLedger()">导出台账Excel</button>
+        </div>
+
+        <!-- 合同台账表格 -->
+        <div class="table-wrapper">
+            <table id="ledgerTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>供应商名称</th>
+                        <th>项目名称</th>
+                        <th>合同类型</th>
+                        <th>签订时间</th>
+                        <th>合同金额（元）</th>
+                        <th>合同单价</th>
+                        <th>市场对标均价</th>
+                        <th>价格差异率</th>
+                        <th>合作次数</th>
+                        <th>三方比价</th>
+                        <th>审批流程</th>
+                        <th>风险标记</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="13" style="text-align: center; color: #656d76;">正在加载内置合同台账...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 台账编辑区域 -->
+        <h3 class="page-title" style="font-size: 16px; margin-bottom: 15px;">自定义修改内置台账</h3>
+        <div class="input-box">
+            <label>台账JSON数据（可直接修改为你的真实合同数据，修改后点击「保存台账」生效）</label>
+            <textarea id="ledgerJson" style="height: 300px;"></textarea>
+        </div>
+        <div class="toolbar">
+            <button class="btn btn-success" onclick="saveCustomLedger()">保存自定义台账</button>
+            <button class="btn btn-default" onclick="resetDefaultLedger()">恢复默认模板台账</button>
+        </div>
+    </div>
+
+    <!-- 2. 制度合规比对页面（核心功能） -->
+    <div class="page" id="page-compare">
         <h2 class="page-title">制度合规比对核查（排查物业人员操作是否合规）</h2>
         <p style="margin-bottom: 20px; color: #656d76;">左侧粘贴公司制度条款（审计基准），右侧粘贴合同/审批流程等审计底稿，自动比对识别不合规的违规操作</p>
         
@@ -358,7 +521,7 @@
         </div>
     </div>
 
-    <!-- 2. 价格合理性比对页面 -->
+    <!-- 3. 价格合理性比对页面 -->
     <div class="page" id="page-price">
         <h2 class="page-title">合同价格合理性比对排查</h2>
         <p style="margin-bottom: 20px; color: #656d76;">比对合同价格与市场均价，自动识别价格异常偏高项，排查利益输送、虚高报价等违规操作</p>
@@ -392,7 +555,7 @@
         </div>
     </div>
 
-    <!-- 3. 违规风险管理页面 -->
+    <!-- 4. 违规风险管理页面 -->
     <div class="page" id="page-risk">
         <h2 class="page-title">审计违规风险点管理</h2>
         <div class="toolbar">
@@ -423,10 +586,10 @@
         </div>
     </div>
 
-    <!-- 4. 审计报告生成页面 -->
+    <!-- 5. 审计报告生成页面 -->
     <div class="page" id="page-report">
         <h2 class="page-title">专项审计报告自动生成</h2>
-        <p style="margin-bottom: 20px; color: #656d76;">自动填充核查结果、违规风险点、整改要求，生成正式专项审计报告，明确后续管理要求</p>
+        <p style="margin-bottom: 20px; color: #656d76;">自动填充台账统计、核查结果、违规风险点、整改要求，生成正式专项审计报告，明确后续管理要求</p>
         
         <div class="toolbar">
             <button class="btn btn-primary" onclick="generateAuditReport()">自动生成审计报告</button>
@@ -435,17 +598,21 @@
         </div>
 
         <div class="report-content" id="reportContent">
-点击「自动生成审计报告」，系统将自动填充本次审计的所有核查结果、违规风险点、整改建议和后续管理要求，生成符合规范的专项审计报告，实现「报告出具、整改闭环、资料归档、管理要求明确」的最终审计目标。
+点击「自动生成审计报告」，系统将自动填充本次审计的台账统计结果、合规核查结果、违规风险点、整改建议和后续管理要求，生成符合规范的专项审计报告，实现「报告出具、整改闭环、资料归档、管理要求明确」的最终审计目标。
         </div>
     </div>
 
-    <!-- 5. 底稿归档导出页面 -->
+    <!-- 6. 底稿归档导出页面 -->
     <div class="page" id="page-archive">
         <h2 class="page-title">审计底稿全量归档导出</h2>
         <p style="margin-bottom: 20px; color: #656d76;">一键导出全量审计底稿，自动生成 word/excel/pdf 三类文件，打包为带分类文件夹的压缩包，满足审计归档要求</p>
         
         <h3 class="page-title" style="font-size: 16px; margin-bottom: 15px;">选择需要导出的底稿内容</h3>
         <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="export_0" checked>
+                <label for="export_0">完整合同台账（Excel）</label>
+            </div>
             <div class="checkbox-item">
                 <input type="checkbox" id="export_1" checked>
                 <label for="export_1">合规核查结果表（Excel）</label>
@@ -504,7 +671,7 @@
                 <tbody>
                     <tr>
                         <td><code>excel底稿</code></td>
-                        <td>合规核查结果表.xlsx、价格比对结果表.xlsx、风险点清单.xlsx</td>
+                        <td>完整合同台账.xlsx、合规核查结果表.xlsx、价格比对结果表.xlsx、风险点清单.xlsx</td>
                         <td>表格类审计底稿，可编辑、可二次加工，用于数据归档</td>
                     </tr>
                     <tr>
@@ -522,7 +689,7 @@
         </div>
     </div>
 
-    <!-- 6. 通用文本比对页面 -->
+    <!-- 7. 通用文本比对页面 -->
     <div class="page" id="page-tools">
         <h2 class="page-title">通用文本比对工具</h2>
         <div class="input-grid">
@@ -550,9 +717,98 @@
 
     <script>
         const dmp = new diff_match_patch();
+        // 默认内置合同台账模板（可自定义修改为你的真实数据）
+        const defaultLedger = [
+            {
+                id: 1,
+                supplier: "厦门XX物业维保有限公司",
+                project: "园区电梯日常维保服务",
+                type: "续签",
+                time: "2025-01-15",
+                amount: 120000,
+                price: 10000,
+                marketPrice: 8000,
+                compare: "否",
+                approve: "是",
+            },
+            {
+                id: 2,
+                supplier: "厦门XX物业维保有限公司",
+                project: "园区消防系统维保",
+                type: "续签",
+                time: "2025-02-20",
+                amount: 80000,
+                price: 6666,
+                marketPrice: 5000,
+                compare: "否",
+                approve: "是",
+            },
+            {
+                id: 3,
+                supplier: "厦门XX工程有限公司",
+                project: "园区路面维修工程",
+                type: "新签",
+                time: "2025-03-10",
+                amount: 150000,
+                price: 300,
+                marketPrice: 260,
+                compare: "是",
+                approve: "是",
+            },
+            {
+                id: 4,
+                supplier: "厦门XX保洁服务有限公司",
+                project: "园区日常保洁服务",
+                type: "续签",
+                time: "2025-01-01",
+                amount: 240000,
+                price: 20000,
+                marketPrice: 18000,
+                compare: "否",
+                approve: "否",
+            },
+            {
+                id: 5,
+                supplier: "厦门XX物业维保有限公司",
+                project: "园区监控系统升级维保",
+                type: "新签",
+                time: "2025-04-05",
+                amount: 60000,
+                price: 60000,
+                marketPrice: 45000,
+                compare: "否",
+                approve: "是",
+            },
+            {
+                id: 6,
+                supplier: "厦门XX园林工程有限公司",
+                project: "园区绿化养护服务",
+                type: "续签",
+                time: "2025-01-10",
+                amount: 90000,
+                price: 7500,
+                marketPrice: 7000,
+                compare: "是",
+                approve: "是",
+            },
+            {
+                id: 7,
+                supplier: "厦门XX工程有限公司",
+                project: "园区地下车库维修工程",
+                type: "新签",
+                time: "2025-05-12",
+                amount: 200000,
+                price: 280,
+                marketPrice: 250,
+                compare: "是",
+                approve: "是",
+            }
+        ];
+
         // 全局数据存储（本地浏览器存储，符合审计保密要求，不上传任何服务器）
         let auditData = {
             projectName: "物业维保、工程类供应商合同合规专项审计",
+            ledger: [],
             riskList: [],
             complianceResult: [],
             priceResult: [],
@@ -571,12 +827,23 @@
                 });
             });
 
-            // 加载本地存储的风险数据
+            // 加载本地存储的数据
             const localData = localStorage.getItem('htsj_audit_data');
             if (localData) {
                 auditData = JSON.parse(localData);
-                refreshRiskTable();
+                // 若无台账数据，加载默认模板
+                if (!auditData.ledger || auditData.ledger.length === 0) {
+                    auditData.ledger = JSON.parse(JSON.stringify(defaultLedger));
+                }
+            } else {
+                // 首次加载，初始化默认台账
+                auditData.ledger = JSON.parse(JSON.stringify(defaultLedger));
             }
+
+            // 初始化台账页面
+            initLedgerPage();
+            refreshRiskTable();
+            saveData();
         };
 
         // 保存数据到本地
@@ -584,7 +851,210 @@
             localStorage.setItem('htsj_audit_data', JSON.stringify(auditData));
         }
 
-        // ========== 核心：制度合规比对功能 ==========
+        // ========== 核心：合同台账管理功能 ==========
+        // 初始化台账页面
+        function initLedgerPage() {
+            // 处理台账数据，计算合作次数、价格差异率
+            processLedgerData();
+            // 渲染台账表格
+            renderLedgerTable();
+            // 更新统计卡片
+            updateLedgerStats();
+            // 初始化筛选下拉框
+            initFilterSelect();
+            // 填充台账JSON编辑框
+            document.getElementById('ledgerJson').value = JSON.stringify(auditData.ledger, null, 2);
+        }
+
+        // 处理台账数据：计算合作次数、价格差异率、风险标记
+        function processLedgerData() {
+            // 统计每个供应商的合作次数
+            const supplierCount = {};
+            auditData.ledger.forEach(item => {
+                supplierCount[item.supplier] = (supplierCount[item.supplier] || 0) + 1;
+            });
+
+            // 遍历台账，补充计算字段
+            auditData.ledger.forEach(item => {
+                // 合作次数
+                item.cooperateCount = supplierCount[item.supplier];
+                // 价格差异率
+                const diffRate = item.marketPrice !== 0 
+                    ? ((item.price - item.marketPrice) / item.marketPrice * 100).toFixed(2) 
+                    : 0;
+                item.diffRate = diffRate + '%';
+                // 价格风险标记
+                item.isPriceRisk = parseFloat(diffRate) > 20;
+                // 重复合作标记
+                item.isRepeat = item.cooperateCount >= 3;
+            });
+        }
+
+        // 渲染台账表格
+        function renderLedgerTable(filterData = null) {
+            const tbody = document.querySelector('#ledgerTable tbody');
+            const showData = filterData || auditData.ledger;
+
+            if (showData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="13" style="text-align: center; color: #656d76;">暂无匹配的合同数据</td></tr>';
+                return;
+            }
+
+            let html = '';
+            showData.forEach(item => {
+                // 风险标记
+                let riskTag = '';
+                if (item.isPriceRisk) riskTag += '<span class="tag tag-danger">价格异常</span> ';
+                if (item.isRepeat) riskTag += '<span class="tag tag-warning">重复合作</span> ';
+                if (!riskTag) riskTag = '<span class="tag tag-success">无风险</span>';
+
+                // 高亮行
+                const rowClass = (item.isPriceRisk || item.isRepeat) ? 'highlight-row' : '';
+
+                html += `
+                <tr class="${rowClass}">
+                    <td>${item.id}</td>
+                    <td>${escapeHtml(item.supplier)}</td>
+                    <td>${escapeHtml(item.project)}</td>
+                    <td>${item.type}</td>
+                    <td>${item.time}</td>
+                    <td>${item.amount.toLocaleString()}</td>
+                    <td>${item.price}</td>
+                    <td>${item.marketPrice}</td>
+                    <td>${item.diffRate}</td>
+                    <td><span class="tag ${item.isRepeat ? 'tag-warning' : 'tag-primary'}">${item.cooperateCount}次</span></td>
+                    <td>${item.compare}</td>
+                    <td>${item.approve}</td>
+                    <td>${riskTag}</td>
+                </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // 更新台账统计卡片
+        function updateLedgerStats() {
+            // 合同总数
+            const totalContract = auditData.ledger.length;
+            // 供应商总数
+            const supplierList = [...new Set(auditData.ledger.map(item => item.supplier))];
+            const totalSupplier = supplierList.length;
+            // 重复合作供应商（合作≥3次）
+            const repeatSupplier = supplierList.filter(supplier => {
+                return auditData.ledger.filter(item => item.supplier === supplier).length >= 3;
+            }).length;
+            // 价格异常风险项
+            const priceRiskCount = auditData.ledger.filter(item => item.isPriceRisk).length;
+
+            // 更新页面
+            document.getElementById('totalContract').textContent = totalContract;
+            document.getElementById('totalSupplier').textContent = totalSupplier;
+            document.getElementById('repeatSupplier').textContent = repeatSupplier;
+            document.getElementById('priceRiskCount').textContent = priceRiskCount;
+        }
+
+        // 初始化筛选下拉框
+        function initFilterSelect() {
+            const supplierSelect = document.getElementById('filterSupplier');
+            const supplierList = [...new Set(auditData.ledger.map(item => item.supplier))];
+            
+            let optionHtml = '<option value="">全部供应商</option>';
+            supplierList.forEach(supplier => {
+                optionHtml += `<option value="${supplier}">${supplier}</option>`;
+            });
+            supplierSelect.innerHTML = optionHtml;
+        }
+
+        // 筛选台账
+        function filterLedger() {
+            const supplier = document.getElementById('filterSupplier').value;
+            const type = document.getElementById('filterType').value;
+            const focus = document.getElementById('filterFocus').value;
+            const keyword = document.getElementById('filterKeyword').value.toLowerCase();
+
+            let filterData = [...auditData.ledger];
+
+            // 供应商筛选
+            if (supplier) {
+                filterData = filterData.filter(item => item.supplier === supplier);
+            }
+            // 合同类型筛选
+            if (type) {
+                filterData = filterData.filter(item => item.type === type);
+            }
+            // 重点核查筛选
+            if (focus === '1') {
+                filterData = filterData.filter(item => item.isRepeat);
+            } else if (focus === '2') {
+                filterData = filterData.filter(item => item.isPriceRisk);
+            }
+            // 关键词筛选
+            if (keyword) {
+                filterData = filterData.filter(item => 
+                    item.supplier.toLowerCase().includes(keyword) || 
+                    item.project.toLowerCase().includes(keyword)
+                );
+            }
+
+            renderLedgerTable(filterData);
+        }
+
+        // 重置筛选
+        function resetFilter() {
+            document.getElementById('filterSupplier').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterFocus').value = '';
+            document.getElementById('filterKeyword').value = '';
+            renderLedgerTable();
+        }
+
+        // 仅看重复合作供应商
+        function focusRepeatSupplier() {
+            document.getElementById('filterFocus').value = '1';
+            filterLedger();
+        }
+
+        // 仅看价格异常风险项
+        function focusPriceRisk() {
+            document.getElementById('filterFocus').value = '2';
+            filterLedger();
+        }
+
+        // 导出台账Excel
+        function exportLedger() {
+            const worksheet = XLSX.utils.json_to_sheet(auditData.ledger);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, '合同台账');
+            XLSX.writeFile(workbook, `htsj物业合同台账_${getDateStr()}.xlsx`);
+        }
+
+        // 保存自定义台账
+        function saveCustomLedger() {
+            try {
+                const customLedger = JSON.parse(document.getElementById('ledgerJson').value);
+                if (!Array.isArray(customLedger)) {
+                    alert('台账数据必须是数组格式！');
+                    return;
+                }
+                auditData.ledger = customLedger;
+                initLedgerPage();
+                saveData();
+                alert('自定义台账保存成功！');
+            } catch (error) {
+                alert('JSON格式错误，请检查后重试：' + error.message);
+            }
+        }
+
+        // 恢复默认模板台账
+        function resetDefaultLedger() {
+            if (confirm('确定要恢复默认模板台账吗？你的自定义数据将被覆盖')) {
+                auditData.ledger = JSON.parse(JSON.stringify(defaultLedger));
+                initLedgerPage();
+                saveData();
+            }
+        }
+
+        // ========== 制度合规比对功能 ==========
         function checkCompliance() {
             const systemText = document.getElementById('systemText').value;
             const contractText = document.getElementById('contractText').value;
@@ -878,6 +1348,16 @@
 
         // ========== 审计报告生成功能 ==========
         function generateAuditReport() {
+            // 台账统计数据
+            const totalContract = auditData.ledger.length;
+            const supplierList = [...new Set(auditData.ledger.map(item => item.supplier))];
+            const totalSupplier = supplierList.length;
+            const repeatSupplier = supplierList.filter(supplier => {
+                return auditData.ledger.filter(item => item.supplier === supplier).length >= 3;
+            }).length;
+            const priceRiskCount = auditData.ledger.filter(item => item.isPriceRisk).length;
+
+            // 风险统计数据
             const totalRisk = auditData.riskList.length;
             const highRisk = auditData.riskList.filter(r => r.level === '高').length;
             const mediumRisk = auditData.riskList.filter(r => r.level === '中').length;
@@ -891,14 +1371,20 @@
 3.  审计目的：核查合同管理、审批流程、价格合理性、关联交易等方面的合规性，排查违规操作风险，规范供应商管理，实现问题整改闭环，完善后续管理制度。
 4.  审计基准日：${getDateStr(true)}
 
-## 二、审计核查结果
+## 二、合同台账整体统计情况
+本次审计共覆盖合同 ${totalContract} 份，涉及供应商 ${totalSupplier} 家，其中：
+- 重复合作（合作次数≥3次）供应商：${repeatSupplier} 家，为本次重点核查对象
+- 价格异常偏高（超市场均价20%以上）风险项：${priceRiskCount} 个
+- 续签合同占比：${((auditData.ledger.filter(item => item.type === '续签').length / totalContract) * 100).toFixed(2)}%
+
+## 三、审计核查结果
 本次审计通过制度条款与实际操作的比对核查、合同价格与市场均价的对标分析，共发现违规风险点 ${totalRisk} 个，其中：
 - 高风险点：${highRisk} 个
 - 中风险点：${mediumRisk} 个
 - 低风险点：${lowRisk} 个
 - 待整改闭环问题：${unCloseRisk} 个
 
-## 三、主要违规风险点明细
+## 四、主要违规风险点明细
 `;
 
             if (totalRisk === 0) {
@@ -913,273 +1399,4 @@
                 });
             }
 
-            report += `
-## 四、整改要求与建议
-1.  针对本次审计发现的高风险点，要求责任部门立即启动整改，于15个工作日内提交整改方案及佐证材料，限期1个月内完成整改闭环。
-2.  针对中低风险点，要求责任部门逐项落实整改，于3个月内完成全部问题的闭环管理，审计部门将全程跟踪整改进度。
-3.  完善合同管理制度，细化续签合同的审批流程、三方比价要求、价格对标机制，明确各岗位的合规职责，从制度上防范违规操作风险。
-4.  加强物业、工程相关人员的合规培训，强化制度执行意识，定期开展合同合规自查，形成常态化的合规管理机制。
-5.  建立供应商价格动态对标体系，每季度更新市场价格数据，对价格异常偏高的合同及时核查调整，杜绝虚高报价、利益输送等违规行为。
-
-## 五、后续管理要求
-1.  建立合同合规审计常态化机制，每半年对物业维保、工程类合同开展一次专项合规抽查，每年开展一次全面审计。
-2.  完善供应商准入与管理机制，对所有合作供应商开展背景核查，排查关联交易情况，建立供应商黑名单制度。
-3.  强化审批流程管控，严格执行三级审批制度，确保合同签订、续签、变更全流程合规可追溯，杜绝流程缺失、越权审批等违规操作。
-4.  所有审计资料、整改材料需完整归档留存，归档期限不低于5年，确保审计工作全程可追溯。
-
-## 六、审计结论
-本次审计通过系统的合规比对与核查，识别出当前物业维保、工程类合同管理中存在的违规风险点。请相关责任部门严格按照本报告要求，按期完成所有问题的整改闭环，落实后续管理要求，全面提升合同合规管理水平，防范经营风险。
-`;
-
-            document.getElementById('reportContent').textContent = report;
-            auditData.auditReport = report;
-            saveData();
-        }
-
-        // 一键复制报告
-        function copyReport() {
-            const content = document.getElementById('reportContent').textContent;
-            navigator.clipboard.writeText(content).then(() => {
-                alert('审计报告已复制到剪贴板');
-            });
-        }
-
-        // 导出报告
-        function exportReport() {
-            const content = document.getElementById('reportContent').textContent;
-            const blob = new Blob([content], { type: 'text/plain' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `htsj专项审计报告_${getDateStr()}.txt`;
-            a.click();
-        }
-
-        // ========== 底稿归档导出核心功能 ==========
-        // 全选/取消全选
-        function selectAllExport() {
-            document.querySelectorAll('.checkbox-group input').forEach(input => {
-                input.checked = true;
-            });
-        }
-
-        function unSelectAllExport() {
-            document.querySelectorAll('.checkbox-group input').forEach(input => {
-                input.checked = false;
-            });
-        }
-
-        // 更新进度条
-        function updateProgress(percent, text) {
-            document.getElementById('progressFill').style.width = percent + '%';
-            document.getElementById('progressText').textContent = `${percent}% - ${text}`;
-        }
-
-        // 生成Excel文件
-        function generateExcelFile(data, sheetName) {
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-            return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-        }
-
-        // 生成Word文件
-        function generateWordFile(content, title) {
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>${title}</title>
-                    <style>
-                        body { font-family: 宋体, SimSun, sans-serif; line-height: 1.8; font-size: 14px; padding: 40px; }
-                        h1, h2, h3 { font-family: 黑体, SimHei, sans-serif; }
-                        h1 { text-align: center; font-size: 22px; margin-bottom: 20px; }
-                        h2 { font-size: 18px; margin-top: 20px; margin-bottom: 10px; }
-                        h3 { font-size: 16px; margin-top: 15px; margin-bottom: 8px; }
-                        p { margin-bottom: 10px; text-indent: 2em; }
-                    </style>
-                </head>
-                <body>
-                    <h1>${title}</h1>
-                    <div>${content.replace(/\n/g, '<br>').replace(/# (.*)/g, '<h1>$1</h1>').replace(/## (.*)/g, '<h2>$1</h2>').replace(/### (.*)/g, '<h3>$1</h3>')}</div>
-                </body>
-                </html>
-            `;
-            return new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
-        }
-
-        // 生成PDF文件
-        async function generatePDFFile(content, title) {
-            const renderBox = document.getElementById('pdfRenderBox');
-            renderBox.innerHTML = `
-                <h1 style="text-align: center; font-size: 22px; margin-bottom: 30px;">${title}</h1>
-                <div style="font-size: 14px; line-height: 1.8;">
-                    ${content.replace(/\n/g, '<br>').replace(/# (.*)/g, '<h1 style="font-size: 20px; margin-bottom: 15px;">$1</h1>').replace(/## (.*)/g, '<h2 style="font-size: 18px; margin-bottom: 12px;">$1</h2>').replace(/### (.*)/g, '<h3 style="font-size: 16px; margin-bottom: 10px;">$1</h3>')}
-                </div>
-            `;
-
-            const pdfBlob = await html2pdf()
-                .set({
-                    margin: 20,
-                    filename: title + '.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2 },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                })
-                .from(renderBox)
-                .output('blob');
-            
-            renderBox.innerHTML = '';
-            return pdfBlob;
-        }
-
-        // 核心：一键归档导出
-        async function handleArchiveExport() {
-            const zip = new JSZip();
-            const exportBtn = document.getElementById('exportBtn');
-            const progressBox = document.getElementById('progressBox');
-            
-            // 禁用按钮，显示进度条
-            exportBtn.disabled = true;
-            progressBox.style.display = 'block';
-            updateProgress(0, '准备生成底稿文件');
-
-            try {
-                // 1. 创建分类文件夹
-                const excelFolder = zip.folder("excel底稿");
-                const wordFolder = zip.folder("word底稿");
-                const pdfFolder = zip.folder("pdf归档件");
-
-                // 2. 生成Excel文件
-                updateProgress(10, '正在生成Excel底稿文件');
-                if (document.getElementById('export_1').checked && auditData.complianceResult.length > 0) {
-                    excelFolder.file(`${getDateStr()}_合规核查结果表.xlsx`, generateExcelFile(auditData.complianceResult, '合规核查结果'));
-                }
-                if (document.getElementById('export_2').checked && auditData.priceResult.length > 0) {
-                    excelFolder.file(`${getDateStr()}_价格比对结果表.xlsx`, generateExcelFile(auditData.priceResult, '价格比对结果'));
-                }
-                if (document.getElementById('export_3').checked && auditData.riskList.length > 0) {
-                    excelFolder.file(`${getDateStr()}_审计风险点清单.xlsx`, generateExcelFile(auditData.riskList, '风险点清单'));
-                }
-
-                // 3. 生成Word文件
-                updateProgress(40, '正在生成Word底稿文件');
-                if (document.getElementById('export_4').checked && auditData.auditReport) {
-                    const reportWord = generateWordFile(auditData.auditReport, '物业维保工程合同合规专项审计报告');
-                    wordFolder.file(`${getDateStr()}_专项审计报告.doc`, reportWord);
-                }
-                if (document.getElementById('export_5').checked) {
-                    // 生成底稿说明文档
-                    const archiveDesc = `
-# 审计底稿说明文档
-## 一、底稿概况
-1.  审计项目：${auditData.projectName}
-2.  底稿生成日期：${getDateStr(true)}
-3.  底稿包含内容：合规核查结果、价格比对结果、风险点清单、专项审计报告
-4.  审计人员：系统自动生成
-
-## 二、底稿文件说明
-1.  excel底稿：包含本次审计所有表格类核查数据，可编辑、可追溯
-2.  word底稿：包含正式审计报告及底稿说明，可直接用于提交归档
-3.  pdf归档件：不可修改的正式归档文件，用于审计档案留存
-
-## 三、审计过程说明
-本次审计通过制度与实际操作的合规比对、价格与市场均价的对标分析，识别违规风险点，形成完整的审计底稿与报告，所有数据均来自系统实际核查结果，真实有效。
-                    `;
-                    const descWord = generateWordFile(archiveDesc, '审计底稿说明文档');
-                    wordFolder.file(`${getDateStr()}_审计底稿说明文档.doc`, descWord);
-                }
-
-                // 4. 生成PDF文件
-                updateProgress(70, '正在生成PDF归档文件');
-                if (document.getElementById('export_6').checked && auditData.auditReport) {
-                    const reportPdf = await generatePDFFile(auditData.auditReport, '物业维保工程合同合规专项审计报告');
-                    pdfFolder.file(`${getDateStr()}_专项审计报告.pdf`, reportPdf);
-                }
-                if (document.getElementById('export_7').checked && auditData.riskList.length > 0) {
-                    // 生成风险点清单PDF内容
-                    let riskPdfContent = `# 审计风险点清单\n\n`;
-                    auditData.riskList.forEach((risk, index) => {
-                        riskPdfContent += `${index+1}. 风险编号：${risk.no}\n`;
-                        riskPdfContent += `   风险类型：${risk.type}\n`;
-                        riskPdfContent += `   风险等级：${risk.level}\n`;
-                        riskPdfContent += `   风险描述：${risk.desc}\n`;
-                        riskPdfContent += `   整改状态：${risk.status}\n\n`;
-                    });
-                    const riskPdf = await generatePDFFile(riskPdfContent, '审计风险点清单');
-                    pdfFolder.file(`${getDateStr()}_风险点清单.pdf`, riskPdf);
-                }
-
-                // 5. 生成压缩包并下载
-                updateProgress(90, '正在打包底稿压缩包');
-                const zipBlob = await zip.generateAsync({ type: 'blob' });
-                saveAs(zipBlob, `htsj审计底稿归档包_${getDateStr()}.zip`);
-
-                updateProgress(100, '底稿导出完成');
-                alert('审计底稿归档包导出成功！解压后即可查看分类文件夹中的所有底稿文件');
-            } catch (error) {
-                alert('导出失败：' + error.message);
-                console.error(error);
-            } finally {
-                // 恢复按钮，隐藏进度条
-                exportBtn.disabled = false;
-                progressBox.style.display = 'none';
-                updateProgress(0, '准备生成文件');
-            }
-        }
-
-        // ========== 通用文本比对功能 ==========
-        function textCompare() {
-            const baseText = document.getElementById('baseText').value;
-            const compareText = document.getElementById('compareText').value;
-            if (!baseText && !compareText) {
-                alert('请输入基准文本和比对文本');
-                return;
-            }
-
-            const diffs = dmp.diff_main(baseText, compareText);
-            dmp.diff_cleanupSemantic(diffs);
-
-            let html = '';
-            diffs.forEach(([type, text]) => {
-                if (type === 1) {
-                    html += `<span class="diff-add">${escapeHtml(text)}</span>`;
-                } else if (type === -1) {
-                    html += `<span class="diff-del">${escapeHtml(text)}</span>`;
-                } else {
-                    html += escapeHtml(text);
-                }
-            });
-
-            document.getElementById('textDiffResult').innerHTML = html;
-        }
-
-        // 清空文本比对
-        function clearTextCompare() {
-            document.getElementById('baseText').value = '';
-            document.getElementById('compareText').value = '';
-            document.getElementById('textDiffResult').innerHTML = '请输入文本后点击「立即比对」查看差异';
-        }
-
-        // ========== 工具函数 ==========
-        // HTML转义
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // 生成日期字符串
-        function getDateStr(isFull = false) {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            if (isFull) {
-                return `${year}年${month}月${day}日`;
-            }
-            return `${year}${month}${day}`;
-        }
-    </script>
-</body>
-</html>
+           

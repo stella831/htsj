@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>htsj 物业合同审计比对系统</title>
+    <!-- 仅在线引入核心工具库，无需本地安装任何软件 -->
+    <script src="https://cdn.jsdelivr.net/npm/diff-match-patch@1.0.5/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- 导出功能依赖：压缩包、PDF生成 -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        body {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .header h1 {
+            color: #24292f;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #656d76;
+        }
+        /* 导航菜单 */
+        .nav {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #d1d9e0;
+            flex-wrap: wrap;
+        }
+        .nav-item {
+            padding: 10px 18px;
+            cursor: pointer;
+            border-radius: 6px 6px 0 0;
+            font-weight: 500;
+            color: #656d76;
+            transition: all 0.2s;
+        }
+        .nav-item.active {
+            background: white;
+            color: #0969da;
+            border: 1px solid #d1d9e0;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+        /* 页面容器 */
+        .page {
+            display: none;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #d1d9e0;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .page.active {
+            display: block;
+        }
+        .page-title {
+            margin-bottom: 20px;
+            color: #24292f;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        /* 按钮工具栏 */
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background-color: #0969da;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0858b8;
+        }
+        .btn-success {
+            background-color: #2da44e;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #2c974b;
+        }
+        .btn-danger {
+            background-color: #cf222e;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #a40e26;
+        }
+        .btn-default {
+            background-color: white;
+            color: #24292f;
+            border: 1px solid #d1d9e0;
+        }
+        .btn-default:hover {
+            background-color: #f6f8fa;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        /* 输入区域 */
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .input-box {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .input-box label {
+            font-weight: 600;
+            color: #24292f;
+            font-size: 14px;
+        }
+        .input-box textarea {
+            width: 100%;
+            height: 220px;
+            padding: 12px;
+            border: 1px solid #d1d9e0;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: vertical;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+        }
+        /* 表格样式 */
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        table th, table td {
+            border: 1px solid #d1d9e0;
+            padding: 10px 12px;
+            text-align: left;
+            line-height: 1.5;
+            min-width: 120px;
+        }
+        table th {
+            background-color: #f6f8fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        /* 复选框组 */
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #d1d9e0;
+            border-radius: 6px;
+            background-color: #fafbfc;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .checkbox-item input {
+            width: 16px;
+            height: 16px;
+        }
+        .checkbox-item label {
+            font-size: 14px;
+            color: #24292f;
+            cursor: pointer;
+        }
+        /* 导出进度条 */
+        .progress-box {
+            display: none;
+            margin-bottom: 20px;
+        }
+        .progress-box .progress-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #f6f8fa;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #2da44e;
+            transition: width 0.3s;
+        }
+        .progress-text {
+            font-size: 12px;
+            color: #656d76;
+            margin-top: 5px;
+        }
+        /* 差异高亮样式 */
+        .diff-add {
+            background-color: #d4f8e8;
+            color: #116329;
+        }
+        .diff-del {
+            background-color: #ffebe9;
+            color: #cf222e;
+            text-decoration: line-through;
+        }
+        .tag {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .tag-danger {
+            background-color: #ffebe9;
+            color: #cf222e;
+        }
+        .tag-success {
+            background-color: #d4f8e8;
+            color: #116329;
+        }
+        .tag-warning {
+            background-color: #fff8c5;
+            color: #9a6700;
+        }
+        .tag-primary {
+            background-color: #ddf4ff;
+            color: #0969da;
+        }
+        /* 报告内容区 */
+        .report-content {
+            width: 100%;
+            min-height: 350px;
+            padding: 15px;
+            border: 1px solid #d1d9e0;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+        }
+        /* 隐藏的PDF渲染容器 */
+        #pdfRenderBox {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            width: 794px;
+            padding: 40px;
+            background: white;
+        }
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>htsj 物业维保&工程合同审计比对系统</h1>
+        <p>合规性核查 | 违规操作排查 | 差异比对 | 审计报告生成 | 底稿批量归档</p>
+    </div>
+
+    <!-- 导航栏 -->
+    <div class="nav">
+        <div class="nav-item active" data-page="compare">制度合规比对（核心）</div>
+        <div class="nav-item" data-page="price">价格合理性比对</div>
+        <div class="nav-item" data-page="risk">违规风险管理</div>
+        <div class="nav-item" data-page="report">审计报告生成</div>
+        <div class="nav-item" data-page="archive">底稿归档导出</div>
+        <div class="nav-item" data-page="tools">通用文本比对</div>
+    </div>
+
+    <!-- 1. 制度合规比对页面（核心功能） -->
+    <div class="page active" id="page-compare">
+        <h2 class="page-title">制度合规比对核查（排查物业人员操作是否合规）</h2>
+        <p style="margin-bottom: 20px; color: #656d76;">左侧粘贴公司制度条款（审计基准），右侧粘贴合同/审批流程等审计底稿，自动比对识别不合规的违规操作</p>
+        
+        <div class="input-grid">
+            <div class="input-box">
+                <label>公司制度条款（审计基准）</label>
+                <textarea id="systemText" placeholder="请粘贴合同管理、供应商管理、审批流程相关的制度条款，例如：
+1. 续签合同必须履行三方比价流程
+2. 合同审批需经部门负责人-财务-审计三级签字确认
+3. 工程类合同必须附工程量清单与验收报告
+..."></textarea>
+            </div>
+            <div class="input-box">
+                <label>合同/审批底稿（待核查内容）</label>
+                <textarea id="contractText" placeholder="请粘贴对应合同条款、审批记录、续签资料等审计底稿内容..."></textarea>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="checkCompliance()">开始合规比对核查</button>
+            <button class="btn btn-success" onclick="addRiskToManage()">将违规点加入风险清单</button>
+            <button class="btn btn-default" onclick="clearCompareInput()">清空内容</button>
+        </div>
+
+        <h3 class="page-title">合规核查结果</h3>
+        <div class="table-wrapper">
+            <table id="complianceResult">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>制度要求条款</th>
+                        <th>实际操作/合同内容</th>
+                        <th>合规性判断</th>
+                        <th>违规风险说明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #656d76;">请输入制度和底稿内容后，点击「开始合规比对核查」</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. 价格合理性比对页面 -->
+    <div class="page" id="page-price">
+        <h2 class="page-title">合同价格合理性比对排查</h2>
+        <p style="margin-bottom: 20px; color: #656d76;">比对合同价格与市场均价，自动识别价格异常偏高项，排查利益输送、虚高报价等违规操作</p>
+        
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="document.getElementById('priceFile').click()">导入Excel价格数据</button>
+            <input type="file" id="priceFile" accept=".xlsx,.xls" style="display: none;" onchange="handlePriceFile()">
+            <button class="btn btn-success" onclick="checkPriceRisk()">价格异常比对排查</button>
+            <button class="btn btn-default" onclick="clearPriceData()">清空数据</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="priceTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>供应商名称</th>
+                        <th>服务/项目名称</th>
+                        <th>合同单价</th>
+                        <th>市场对标均价</th>
+                        <th>价格差异率</th>
+                        <th>风险判断</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #656d76;">请导入Excel价格数据（列名需与表头一致）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. 违规风险管理页面 -->
+    <div class="page" id="page-risk">
+        <h2 class="page-title">审计违规风险点管理</h2>
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="addManualRisk()">手动新增风险点</button>
+            <button class="btn btn-success" onclick="exportRiskList()">导出风险清单</button>
+            <button class="btn btn-default" onclick="clearAllRisk()">清空所有风险点</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="riskTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>风险编号</th>
+                        <th>风险类型</th>
+                        <th>风险描述</th>
+                        <th>风险等级</th>
+                        <th>涉及供应商/合同</th>
+                        <th>整改状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #656d76;">暂无风险点数据，可从合规比对结果添加</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. 审计报告生成页面 -->
+    <div class="page" id="page-report">
+        <h2 class="page-title">专项审计报告自动生成</h2>
+        <p style="margin-bottom: 20px; color: #656d76;">自动填充核查结果、违规风险点、整改要求，生成正式专项审计报告，明确后续管理要求</p>
+        
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="generateAuditReport()">自动生成审计报告</button>
+            <button class="btn btn-success" onclick="copyReport()">一键复制报告</button>
+            <button class="btn btn-default" onclick="exportReport()">导出报告</button>
+        </div>
+
+        <div class="report-content" id="reportContent">
+点击「自动生成审计报告」，系统将自动填充本次审计的所有核查结果、违规风险点、整改建议和后续管理要求，生成符合规范的专项审计报告，实现「报告出具、整改闭环、资料归档、管理要求明确」的最终审计目标。
+        </div>
+    </div>
+
+    <!-- 5. 底稿归档导出页面 -->
+    <div class="page" id="page-archive">
+        <h2 class="page-title">审计底稿全量归档导出</h2>
+        <p style="margin-bottom: 20px; color: #656d76;">一键导出全量审计底稿，自动生成 word/excel/pdf 三类文件，打包为带分类文件夹的压缩包，满足审计归档要求</p>
+        
+        <h3 class="page-title" style="font-size: 16px; margin-bottom: 15px;">选择需要导出的底稿内容</h3>
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="export_1" checked>
+                <label for="export_1">合规核查结果表（Excel）</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="export_2" checked>
+                <label for="export_2">价格比对结果表（Excel）</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="export_3" checked>
+                <label for="export_3">审计风险点清单（Excel）</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="export_4" checked>
+                <label for="export_4">专项审计报告（Word）</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="export_5" checked>
+                <label for="export_5">审计底稿说明文档（Word）</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="export_6" checked>
+                <label for="export_6">专项审计报告（PDF）</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="export_7" checked>
+                <label for="export_7">风险点清单（PDF）</label>
+            </div>
+        </div>
+
+        <!-- 导出进度条 -->
+        <div class="progress-box" id="progressBox">
+            <div class="progress-title">正在生成底稿文件，请稍候...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">0% - 准备生成文件</div>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="handleArchiveExport()" id="exportBtn">一键导出全量底稿压缩包</button>
+            <button class="btn btn-default" onclick="selectAllExport()">全选</button>
+            <button class="btn btn-default" onclick="unSelectAllExport()">取消全选</button>
+        </div>
+
+        <h3 class="page-title" style="font-size: 16px; margin-bottom: 15px;">归档文件夹结构说明</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>一级文件夹</th>
+                        <th>包含文件</th>
+                        <th>文件用途</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>excel底稿</code></td>
+                        <td>合规核查结果表.xlsx、价格比对结果表.xlsx、风险点清单.xlsx</td>
+                        <td>表格类审计底稿，可编辑、可二次加工，用于数据归档</td>
+                    </tr>
+                    <tr>
+                        <td><code>word底稿</code></td>
+                        <td>专项审计报告.doc、审计底稿说明文档.doc</td>
+                        <td>文档类审计底稿，可直接编辑修改，用于正式报告提交</td>
+                    </tr>
+                    <tr>
+                        <td><code>pdf归档件</code></td>
+                        <td>专项审计报告.pdf、风险点清单.pdf</td>
+                        <td>不可修改的正式归档文件，用于审计档案留存、合规备案</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 6. 通用文本比对页面 -->
+    <div class="page" id="page-tools">
+        <h2 class="page-title">通用文本比对工具</h2>
+        <div class="input-grid">
+            <div class="input-box">
+                <label>基准文本（旧内容）</label>
+                <textarea id="baseText" placeholder="请输入基准文本内容..."></textarea>
+            </div>
+            <div class="input-box">
+                <label>比对文本（新内容）</label>
+                <textarea id="compareText" placeholder="请输入比对文本内容..."></textarea>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="textCompare()">立即比对</button>
+            <button class="btn btn-default" onclick="clearTextCompare()">清空内容</button>
+        </div>
+
+        <h3 class="page-title">比对结果</h3>
+        <div id="textDiffResult" class="report-content" style="min-height: 200px;">请输入文本后点击「立即比对」查看差异</div>
+    </div>
+
+    <!-- 隐藏的PDF渲染容器 -->
+    <div id="pdfRenderBox"></div>
+
+    <script>
+        const dmp = new diff_match_patch();
+        // 全局数据存储（本地浏览器存储，符合审计保密要求，不上传任何服务器）
+        let auditData = {
+            projectName: "物业维保、工程类供应商合同合规专项审计",
+            riskList: [],
+            complianceResult: [],
+            priceResult: [],
+            auditReport: ""
+        };
+
+        // 页面初始化
+        window.onload = function() {
+            // 导航切换
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById('page-' + this.dataset.page).classList.add('active');
+                });
+            });
+
+            // 加载本地存储的风险数据
+            const localData = localStorage.getItem('htsj_audit_data');
+            if (localData) {
+                auditData = JSON.parse(localData);
+                refreshRiskTable();
+            }
+        };
+
+        // 保存数据到本地
+        function saveData() {
+            localStorage.setItem('htsj_audit_data', JSON.stringify(auditData));
+        }
+
+        // ========== 核心：制度合规比对功能 ==========
+        function checkCompliance() {
+            const systemText = document.getElementById('systemText').value;
+            const contractText = document.getElementById('contractText').value;
+            if (!systemText.trim() || !contractText.trim()) {
+                alert('请先输入制度条款和合同/底稿内容');
+                return;
+            }
+
+            // 拆分制度条款，逐行核查
+            const systemRules = systemText.split('\n').filter(line => line.trim());
+            const tbody = document.querySelector('#complianceResult tbody');
+            let html = '';
+            let resultList = [];
+
+            systemRules.forEach((rule, index) => {
+                const ruleKey = rule.trim().replace(/^\d+[.、]\s*/, '').substring(0, 15); // 提取关键词
+                const hasMatch = contractText.includes(ruleKey);
+                const isCompliance = hasMatch;
+
+                // 匹配实际内容
+                const matchContent = contractText.match(new RegExp(`.*${ruleKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*`, 'm'))?.[0] || '无对应内容';
+                
+                // 合规性标签
+                const tag = isCompliance 
+                    ? '<span class="tag tag-success">合规</span>' 
+                    : '<span class="tag tag-danger">不合规</span>';
+                
+                // 风险说明
+                const desc = isCompliance 
+                    ? '符合制度要求，无违规风险' 
+                    : '实际操作未落实制度要求，存在违规操作风险，需重点核查';
+
+                // 保存结果到全局数据
+                resultList.push({
+                    序号: index + 1,
+                    制度要求条款: rule,
+                    实际操作_合同内容: matchContent,
+                    合规性判断: isCompliance ? '合规' : '不合规',
+                    违规风险说明: desc
+                });
+
+                html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(rule)}</td>
+                    <td>${escapeHtml(matchContent)}</td>
+                    <td>${tag}</td>
+                    <td>${desc}</td>
+                </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            auditData.complianceResult = resultList;
+            saveData();
+        }
+
+        // 将违规点加入风险清单
+        function addRiskToManage() {
+            const rows = document.querySelectorAll('#complianceResult tbody tr');
+            if (rows.length === 0 || rows[0].querySelector('td').colSpan) {
+                alert('请先完成合规比对核查');
+                return;
+            }
+
+            let addCount = 0;
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells[3].innerHTML.includes('不合规')) {
+                    const riskNo = 'RISK-' + String(auditData.riskList.length + 1).padStart(3, '0');
+                    // 避免重复添加
+                    const exists = auditData.riskList.some(r => r.desc.includes(cells[1].textContent));
+                    if (!exists) {
+                        auditData.riskList.push({
+                            no: riskNo,
+                            type: '制度不合规',
+                            desc: `制度要求：${cells[1].textContent}，实际操作：${cells[2].textContent}，不符合制度规定，存在违规风险`,
+                            level: '中',
+                            contract: '',
+                            status: '待整改'
+                        });
+                        addCount++;
+                    }
+                }
+            });
+
+            refreshRiskTable();
+            saveData();
+            alert(`成功添加 ${addCount} 个违规风险点到风险清单`);
+        }
+
+        // 清空比对输入
+        function clearCompareInput() {
+            document.getElementById('systemText').value = '';
+            document.getElementById('contractText').value = '';
+            document.querySelector('#complianceResult tbody').innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #656d76;">请输入制度和底稿内容后，点击「开始合规比对核查」</td>
+                </tr>
+            `;
+            auditData.complianceResult = [];
+            saveData();
+        }
+
+        // ========== 价格合理性比对功能 ==========
+        // 处理Excel价格文件上传
+        function handlePriceFile() {
+            const file = document.getElementById('priceFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                renderPriceTable(jsonData);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 渲染价格表格
+        function renderPriceTable(data) {
+            const tbody = document.querySelector('#priceTable tbody');
+            let html = '';
+            let resultList = [];
+
+            data.forEach((item, index) => {
+                const contractPrice = parseFloat(item['合同单价']) || 0;
+                const marketPrice = parseFloat(item['市场对标均价']) || 0;
+                // 计算差异率
+                const diffRate = marketPrice !== 0 ? ((contractPrice - marketPrice) / marketPrice * 100).toFixed(2) : 0;
+                // 差异超20%标记为异常
+                const isRisk = parseFloat(diffRate) > 20;
+                const tag = isRisk 
+                    ? '<span class="tag tag-danger">价格异常偏高</span>' 
+                    : '<span class="tag tag-success">价格合理</span>';
+
+                // 保存结果到全局数据
+                resultList.push({
+                    序号: index + 1,
+                    供应商名称: item['供应商名称'] || '',
+                    服务_项目名称: item['服务/项目名称'] || '',
+                    合同单价: contractPrice,
+                    市场对标均价: marketPrice,
+                    价格差异率: diffRate + '%',
+                    风险判断: isRisk ? '价格异常偏高' : '价格合理'
+                });
+
+                html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(item['供应商名称'] || '')}</td>
+                    <td>${escapeHtml(item['服务/项目名称'] || '')}</td>
+                    <td>${contractPrice}</td>
+                    <td>${marketPrice}</td>
+                    <td>${diffRate}%</td>
+                    <td>${tag}</td>
+                </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            auditData.priceResult = resultList;
+            saveData();
+        }
+
+        // 价格异常排查
+        function checkPriceRisk() {
+            const rows = document.querySelectorAll('#priceTable tbody tr');
+            if (rows.length === 0 || rows[0].querySelector('td').colSpan) {
+                alert('请先导入价格数据');
+                return;
+            }
+
+            let addCount = 0;
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells[6].innerHTML.includes('价格异常偏高')) {
+                    const riskNo = 'RISK-' + String(auditData.riskList.length + 1).padStart(3, '0');
+                    const exists = auditData.riskList.some(r => r.desc.includes(cells[2].textContent));
+                    if (!exists) {
+                        auditData.riskList.push({
+                            no: riskNo,
+                            type: '价格异常',
+                            desc: `项目：${cells[2].textContent}，合同单价${cells[3].textContent}，市场均价${cells[4].textContent}，价格差异率${cells[5].textContent}，远超市场合理水平，存在虚高报价、利益输送风险`,
+                            level: '高',
+                            contract: cells[1].textContent,
+                            status: '待整改'
+                        });
+                        addCount++;
+                    }
+                }
+            });
+
+            refreshRiskTable();
+            saveData();
+            alert(`成功添加 ${addCount} 个价格异常风险点到风险清单`);
+        }
+
+        // 清空价格数据
+        function clearPriceData() {
+            document.getElementById('priceFile').value = '';
+            document.querySelector('#priceTable tbody').innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #656d76;">请导入Excel价格数据（列名需与表头一致）</td>
+                </tr>
+            `;
+            auditData.priceResult = [];
+            saveData();
+        }
+
+        // ========== 风险点管理功能 ==========
+        // 刷新风险表格
+        function refreshRiskTable() {
+            const tbody = document.querySelector('#riskTable tbody');
+            if (auditData.riskList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #656d76;">暂无风险点数据，可从合规比对结果添加</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            auditData.riskList.forEach((risk, index) => {
+                const levelTag = risk.level === '高' 
+                    ? '<span class="tag tag-danger">高</span>' 
+                    : '<span class="tag tag-warning">中</span>';
+                const statusTag = risk.status === '已闭环' 
+                    ? '<span class="tag tag-success">已闭环</span>' 
+                    : '<span class="tag tag-warning">待整改</span>';
+
+                html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${risk.no}</td>
+                    <td>${risk.type}</td>
+                    <td>${escapeHtml(risk.desc)}</td>
+                    <td>${levelTag}</td>
+                    <td>${escapeHtml(risk.contract)}</td>
+                    <td>${statusTag}</td>
+                </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // 手动新增风险点
+        function addManualRisk() {
+            const desc = prompt('请输入风险点描述：');
+            if (!desc) return;
+            const type = prompt('请输入风险类型（如：制度不合规、价格异常、流程缺失等）：', '制度不合规');
+            const level = prompt('请输入风险等级（高/中/低）：', '中');
+
+            const riskNo = 'RISK-' + String(auditData.riskList.length + 1).padStart(3, '0');
+            auditData.riskList.push({
+                no: riskNo,
+                type: type || '其他',
+                desc: desc,
+                level: level || '中',
+                contract: '',
+                status: '待整改'
+            });
+
+            refreshRiskTable();
+            saveData();
+        }
+
+        // 导出风险清单
+        function exportRiskList() {
+            if (auditData.riskList.length === 0) {
+                alert('暂无风险点数据可导出');
+                return;
+            }
+            const worksheet = XLSX.utils.json_to_sheet(auditData.riskList);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, '审计风险清单');
+            XLSX.writeFile(workbook, `htsj审计风险清单_${getDateStr()}.xlsx`);
+        }
+
+        // 清空所有风险点
+        function clearAllRisk() {
+            if (confirm('确定要清空所有风险点数据吗？此操作不可恢复')) {
+                auditData.riskList = [];
+                refreshRiskTable();
+                saveData();
+            }
+        }
+
+        // ========== 审计报告生成功能 ==========
+        function generateAuditReport() {
+            const totalRisk = auditData.riskList.length;
+            const highRisk = auditData.riskList.filter(r => r.level === '高').length;
+            const mediumRisk = auditData.riskList.filter(r => r.level === '中').length;
+            const lowRisk = auditData.riskList.filter(r => r.level === '低').length;
+            const unCloseRisk = auditData.riskList.filter(r => r.status !== '已闭环').length;
+
+            let report = `# 物业维保、工程类供应商合同合规及关联情况专项审计报告
+## 一、审计概况
+1.  审计项目：物业维保、工程类供应商合同合规及关联情况专项审计
+2.  审计范围：近3年物业维保、工程类供应商合同（以续签合同为重点）
+3.  审计目的：核查合同管理、审批流程、价格合理性、关联交易等方面的合规性，排查违规操作风险，规范供应商管理，实现问题整改闭环，完善后续管理制度。
+4.  审计基准日：${getDateStr(true)}
+
+## 二、审计核查结果
+本次审计通过制度条款与实际操作的比对核查、合同价格与市场均价的对标分析，共发现违规风险点 ${totalRisk} 个，其中：
+- 高风险点：${highRisk} 个
+- 中风险点：${mediumRisk} 个
+- 低风险点：${lowRisk} 个
+- 待整改闭环问题：${unCloseRisk} 个
+
+## 三、主要违规风险点明细
+`;
+
+            if (totalRisk === 0) {
+                report += `本次审计未发现违规风险点，合同管理与操作整体符合制度要求。\n`;
+            } else {
+                auditData.riskList.forEach((risk, index) => {
+                    report += `${index+1}. 风险编号：${risk.no}\n`;
+                    report += `   风险类型：${risk.type}\n`;
+                    report += `   风险等级：${risk.level}\n`;
+                    report += `   风险描述：${risk.desc}\n`;
+                    report += `   整改状态：${risk.status}\n\n`;
+                });
+            }
+
+            report += `
+## 四、整改要求与建议
+1.  针对本次审计发现的高风险点，要求责任部门立即启动整改，于15个工作日内提交整改方案及佐证材料，限期1个月内完成整改闭环。
+2.  针对中低风险点，要求责任部门逐项落实整改，于3个月内完成全部问题的闭环管理，审计部门将全程跟踪整改进度。
+3.  完善合同管理制度，细化续签合同的审批流程、三方比价要求、价格对标机制，明确各岗位的合规职责，从制度上防范违规操作风险。
+4.  加强物业、工程相关人员的合规培训，强化制度执行意识，定期开展合同合规自查，形成常态化的合规管理机制。
+5.  建立供应商价格动态对标体系，每季度更新市场价格数据，对价格异常偏高的合同及时核查调整，杜绝虚高报价、利益输送等违规行为。
+
+## 五、后续管理要求
+1.  建立合同合规审计常态化机制，每半年对物业维保、工程类合同开展一次专项合规抽查，每年开展一次全面审计。
+2.  完善供应商准入与管理机制，对所有合作供应商开展背景核查，排查关联交易情况，建立供应商黑名单制度。
+3.  强化审批流程管控，严格执行三级审批制度，确保合同签订、续签、变更全流程合规可追溯，杜绝流程缺失、越权审批等违规操作。
+4.  所有审计资料、整改材料需完整归档留存，归档期限不低于5年，确保审计工作全程可追溯。
+
+## 六、审计结论
+本次审计通过系统的合规比对与核查，识别出当前物业维保、工程类合同管理中存在的违规风险点。请相关责任部门严格按照本报告要求，按期完成所有问题的整改闭环，落实后续管理要求，全面提升合同合规管理水平，防范经营风险。
+`;
+
+            document.getElementById('reportContent').textContent = report;
+            auditData.auditReport = report;
+            saveData();
+        }
+
+        // 一键复制报告
+        function copyReport() {
+            const content = document.getElementById('reportContent').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('审计报告已复制到剪贴板');
+            });
+        }
+
+        // 导出报告
+        function exportReport() {
+            const content = document.getElementById('reportContent').textContent;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `htsj专项审计报告_${getDateStr()}.txt`;
+            a.click();
+        }
+
+        // ========== 底稿归档导出核心功能 ==========
+        // 全选/取消全选
+        function selectAllExport() {
+            document.querySelectorAll('.checkbox-group input').forEach(input => {
+                input.checked = true;
+            });
+        }
+
+        function unSelectAllExport() {
+            document.querySelectorAll('.checkbox-group input').forEach(input => {
+                input.checked = false;
+            });
+        }
+
+        // 更新进度条
+        function updateProgress(percent, text) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = `${percent}% - ${text}`;
+        }
+
+        // 生成Excel文件
+        function generateExcelFile(data, sheetName) {
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+            return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        }
+
+        // 生成Word文件
+        function generateWordFile(content, title) {
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${title}</title>
+                    <style>
+                        body { font-family: 宋体, SimSun, sans-serif; line-height: 1.8; font-size: 14px; padding: 40px; }
+                        h1, h2, h3 { font-family: 黑体, SimHei, sans-serif; }
+                        h1 { text-align: center; font-size: 22px; margin-bottom: 20px; }
+                        h2 { font-size: 18px; margin-top: 20px; margin-bottom: 10px; }
+                        h3 { font-size: 16px; margin-top: 15px; margin-bottom: 8px; }
+                        p { margin-bottom: 10px; text-indent: 2em; }
+                    </style>
+                </head>
+                <body>
+                    <h1>${title}</h1>
+                    <div>${content.replace(/\n/g, '<br>').replace(/# (.*)/g, '<h1>$1</h1>').replace(/## (.*)/g, '<h2>$1</h2>').replace(/### (.*)/g, '<h3>$1</h3>')}</div>
+                </body>
+                </html>
+            `;
+            return new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+        }
+
+        // 生成PDF文件
+        async function generatePDFFile(content, title) {
+            const renderBox = document.getElementById('pdfRenderBox');
+            renderBox.innerHTML = `
+                <h1 style="text-align: center; font-size: 22px; margin-bottom: 30px;">${title}</h1>
+                <div style="font-size: 14px; line-height: 1.8;">
+                    ${content.replace(/\n/g, '<br>').replace(/# (.*)/g, '<h1 style="font-size: 20px; margin-bottom: 15px;">$1</h1>').replace(/## (.*)/g, '<h2 style="font-size: 18px; margin-bottom: 12px;">$1</h2>').replace(/### (.*)/g, '<h3 style="font-size: 16px; margin-bottom: 10px;">$1</h3>')}
+                </div>
+            `;
+
+            const pdfBlob = await html2pdf()
+                .set({
+                    margin: 20,
+                    filename: title + '.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                })
+                .from(renderBox)
+                .output('blob');
+            
+            renderBox.innerHTML = '';
+            return pdfBlob;
+        }
+
+        // 核心：一键归档导出
+        async function handleArchiveExport() {
+            const zip = new JSZip();
+            const exportBtn = document.getElementById('exportBtn');
+            const progressBox = document.getElementById('progressBox');
+            
+            // 禁用按钮，显示进度条
+            exportBtn.disabled = true;
+            progressBox.style.display = 'block';
+            updateProgress(0, '准备生成底稿文件');
+
+            try {
+                // 1. 创建分类文件夹
+                const excelFolder = zip.folder("excel底稿");
+                const wordFolder = zip.folder("word底稿");
+                const pdfFolder = zip.folder("pdf归档件");
+
+                // 2. 生成Excel文件
+                updateProgress(10, '正在生成Excel底稿文件');
+                if (document.getElementById('export_1').checked && auditData.complianceResult.length > 0) {
+                    excelFolder.file(`${getDateStr()}_合规核查结果表.xlsx`, generateExcelFile(auditData.complianceResult, '合规核查结果'));
+                }
+                if (document.getElementById('export_2').checked && auditData.priceResult.length > 0) {
+                    excelFolder.file(`${getDateStr()}_价格比对结果表.xlsx`, generateExcelFile(auditData.priceResult, '价格比对结果'));
+                }
+                if (document.getElementById('export_3').checked && auditData.riskList.length > 0) {
+                    excelFolder.file(`${getDateStr()}_审计风险点清单.xlsx`, generateExcelFile(auditData.riskList, '风险点清单'));
+                }
+
+                // 3. 生成Word文件
+                updateProgress(40, '正在生成Word底稿文件');
+                if (document.getElementById('export_4').checked && auditData.auditReport) {
+                    const reportWord = generateWordFile(auditData.auditReport, '物业维保工程合同合规专项审计报告');
+                    wordFolder.file(`${getDateStr()}_专项审计报告.doc`, reportWord);
+                }
+                if (document.getElementById('export_5').checked) {
+                    // 生成底稿说明文档
+                    const archiveDesc = `
+# 审计底稿说明文档
+## 一、底稿概况
+1.  审计项目：${auditData.projectName}
+2.  底稿生成日期：${getDateStr(true)}
+3.  底稿包含内容：合规核查结果、价格比对结果、风险点清单、专项审计报告
+4.  审计人员：系统自动生成
+
+## 二、底稿文件说明
+1.  excel底稿：包含本次审计所有表格类核查数据，可编辑、可追溯
+2.  word底稿：包含正式审计报告及底稿说明，可直接用于提交归档
+3.  pdf归档件：不可修改的正式归档文件，用于审计档案留存
+
+## 三、审计过程说明
+本次审计通过制度与实际操作的合规比对、价格与市场均价的对标分析，识别违规风险点，形成完整的审计底稿与报告，所有数据均来自系统实际核查结果，真实有效。
+                    `;
+                    const descWord = generateWordFile(archiveDesc, '审计底稿说明文档');
+                    wordFolder.file(`${getDateStr()}_审计底稿说明文档.doc`, descWord);
+                }
+
+                // 4. 生成PDF文件
+                updateProgress(70, '正在生成PDF归档文件');
+                if (document.getElementById('export_6').checked && auditData.auditReport) {
+                    const reportPdf = await generatePDFFile(auditData.auditReport, '物业维保工程合同合规专项审计报告');
+                    pdfFolder.file(`${getDateStr()}_专项审计报告.pdf`, reportPdf);
+                }
+                if (document.getElementById('export_7').checked && auditData.riskList.length > 0) {
+                    // 生成风险点清单PDF内容
+                    let riskPdfContent = `# 审计风险点清单\n\n`;
+                    auditData.riskList.forEach((risk, index) => {
+                        riskPdfContent += `${index+1}. 风险编号：${risk.no}\n`;
+                        riskPdfContent += `   风险类型：${risk.type}\n`;
+                        riskPdfContent += `   风险等级：${risk.level}\n`;
+                        riskPdfContent += `   风险描述：${risk.desc}\n`;
+                        riskPdfContent += `   整改状态：${risk.status}\n\n`;
+                    });
+                    const riskPdf = await generatePDFFile(riskPdfContent, '审计风险点清单');
+                    pdfFolder.file(`${getDateStr()}_风险点清单.pdf`, riskPdf);
+                }
+
+                // 5. 生成压缩包并下载
+                updateProgress(90, '正在打包底稿压缩包');
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                saveAs(zipBlob, `htsj审计底稿归档包_${getDateStr()}.zip`);
+
+                updateProgress(100, '底稿导出完成');
+                alert('审计底稿归档包导出成功！解压后即可查看分类文件夹中的所有底稿文件');
+            } catch (error) {
+                alert('导出失败：' + error.message);
+                console.error(error);
+            } finally {
+                // 恢复按钮，隐藏进度条
+                exportBtn.disabled = false;
+                progressBox.style.display = 'none';
+                updateProgress(0, '准备生成文件');
+            }
+        }
+
+        // ========== 通用文本比对功能 ==========
+        function textCompare() {
+            const baseText = document.getElementById('baseText').value;
+            const compareText = document.getElementById('compareText').value;
+            if (!baseText && !compareText) {
+                alert('请输入基准文本和比对文本');
+                return;
+            }
+
+            const diffs = dmp.diff_main(baseText, compareText);
+            dmp.diff_cleanupSemantic(diffs);
+
+            let html = '';
+            diffs.forEach(([type, text]) => {
+                if (type === 1) {
+                    html += `<span class="diff-add">${escapeHtml(text)}</span>`;
+                } else if (type === -1) {
+                    html += `<span class="diff-del">${escapeHtml(text)}</span>`;
+                } else {
+                    html += escapeHtml(text);
+                }
+            });
+
+            document.getElementById('textDiffResult').innerHTML = html;
+        }
+
+        // 清空文本比对
+        function clearTextCompare() {
+            document.getElementById('baseText').value = '';
+            document.getElementById('compareText').value = '';
+            document.getElementById('textDiffResult').innerHTML = '请输入文本后点击「立即比对」查看差异';
+        }
+
+        // ========== 工具函数 ==========
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 生成日期字符串
+        function getDateStr(isFull = false) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            if (isFull) {
+                return `${year}年${month}月${day}日`;
+            }
+            return `${year}${month}${day}`;
+        }
+    </script>
+</body>
+</html>

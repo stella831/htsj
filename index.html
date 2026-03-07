@@ -818,7 +818,27 @@
             auditReport: ""
         };
 
+        // 辅助函数：转义HTML，防止XSS
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // 辅助函数：获取日期字符串
+        function getDateStr(full = false) {
+            const now = new Date();
+            if (full) {
+                return now.getFullYear() + "年" + (now.getMonth() + 1) + "月" + now.getDate() + "日";
+            }
+            return now.getFullYear() + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0');
+        }
+
         window.onload = function() {
+            // 导航切换
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.addEventListener('click', function() {
                     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
@@ -828,20 +848,11 @@
                 });
             });
 
-            const localData = localStorage.getItem('htsj_audit_data');
-            if (localData) {
-                try {
-                    auditData = JSON.parse(localData);
-                    if (!auditData.ledger || auditData.ledger.length === 0) {
-                        auditData.ledger = JSON.parse(JSON.stringify(defaultLedger));
-                    }
-                } catch (e) {
-                    auditData.ledger = JSON.parse(JSON.stringify(defaultLedger));
-                }
-            } else {
-                auditData.ledger = JSON.parse(JSON.stringify(defaultLedger));
-            }
-
+            // 清空本地存储，避免旧数据干扰
+            localStorage.removeItem('htsj_audit_data');
+            // 加载默认台账
+            auditData.ledger = JSON.parse(JSON.stringify(defaultLedger));
+            // 初始化页面
             initLedgerPage();
             refreshRiskTable();
             saveData();
@@ -852,11 +863,16 @@
         }
 
         function initLedgerPage() {
-            processLedgerData();
-            renderLedgerTable();
-            updateLedgerStats();
-            initFilterSelect();
-            document.getElementById('ledgerJson').value = JSON.stringify(auditData.ledger, null, 2);
+            try {
+                processLedgerData();
+                renderLedgerTable();
+                updateLedgerStats();
+                initFilterSelect();
+                document.getElementById('ledgerJson').value = JSON.stringify(auditData.ledger, null, 2);
+            } catch (error) {
+                console.error('初始化台账页面失败:', error);
+                alert('页面初始化失败，请刷新页面重试。错误信息: ' + error.message);
+            }
         }
 
         function processLedgerData() {
@@ -978,6 +994,7 @@
                     saveData();
                     alert(`台账导入成功！共导入 ${formatData.length} 条合同数据`);
                 } catch (error) {
+                    console.error('导入台账失败:', error);
                     alert('导入失败：' + error.message + '，请检查Excel列名是否符合要求');
                 }
             };
@@ -1005,26 +1022,31 @@
         }
 
         function filterLedger() {
-            const supplier = document.getElementById('filterSupplier').value;
-            const type = document.getElementById('filterType').value;
-            const focus = document.getElementById('filterFocus').value;
-            const keyword = document.getElementById('filterKeyword').value.toLowerCase();
+            try {
+                const supplier = document.getElementById('filterSupplier').value;
+                const type = document.getElementById('filterType').value;
+                const focus = document.getElementById('filterFocus').value;
+                const keyword = document.getElementById('filterKeyword').value.toLowerCase();
 
-            let filterData = [...auditData.ledger];
+                let filterData = [...auditData.ledger];
 
-            if (supplier) filterData = filterData.filter(item => item.supplier === supplier);
-            if (type) filterData = filterData.filter(item => item.type === type);
-            if (focus === '1') filterData = filterData.filter(item => item.isRepeat);
-            else if (focus === '2') filterData = filterData.filter(item => item.isPriceRisk);
-            if (keyword) {
-                filterData = filterData.filter(item => 
-                    item.supplier.toLowerCase().includes(keyword) || 
-                    item.project.toLowerCase().includes(keyword)
-                );
+                if (supplier) filterData = filterData.filter(item => item.supplier === supplier);
+                if (type) filterData = filterData.filter(item => item.type === type);
+                if (focus === '1') filterData = filterData.filter(item => item.isRepeat);
+                else if (focus === '2') filterData = filterData.filter(item => item.isPriceRisk);
+                if (keyword) {
+                    filterData = filterData.filter(item => 
+                        item.supplier.toLowerCase().includes(keyword) || 
+                        item.project.toLowerCase().includes(keyword)
+                    );
+                }
+
+                renderLedgerTable(filterData);
+                document.querySelector('#ledgerTable').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error('筛选台账失败:', error);
+                alert('筛选失败，请重试。错误信息: ' + error.message);
             }
-
-            renderLedgerTable(filterData);
-            document.querySelector('#ledgerTable').scrollIntoView({ behavior: 'smooth' });
         }
 
         function resetFilter() {
@@ -1320,32 +1342,4 @@
                 status: '待整改'
             });
 
-            refreshRiskTable();
-            saveData();
-        }
-
-        function exportRiskList() {
-            if (auditData.riskList.length === 0) {
-                alert('暂无风险点数据可导出');
-                return;
-            }
-            const worksheet = XLSX.utils.json_to_sheet(auditData.riskList);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, '审计风险清单');
-            XLSX.writeFile(workbook, `htsj审计风险清单_${getDateStr()}.xlsx`);
-        }
-
-        function clearAllRisk() {
-            if (confirm('确定要清空所有风险点数据吗？此操作不可恢复')) {
-                auditData.riskList = [];
-                refreshRiskTable();
-                saveData();
-            }
-        }
-
-        function generateAuditReport() {
-            const totalContract = auditData.ledger.length;
-            const supplierList = [...new Set(auditData.ledger.map(item => item.supplier))];
-            const totalSupplier = supplierList.length;
-            const repeatSupplier = supplierList.filter(supplier => {
-                return auditData.ledger.filter(item => item.supplier === supplier).length >= 
+            refreshRisk

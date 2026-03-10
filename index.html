@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -11,8 +10,7 @@
     <script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
+    <script src="https://cdn.bootcdn.net/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>    <style>
         * {
             margin: 0;
             padding: 0;
@@ -591,7 +589,7 @@
         <div class="main-nav-item" data-page="structure">目录结构</div>
         <div class="main-nav-item" data-page="usage">使用说明</div>
         <div class="main-nav-item" data-page="extend">扩展功能</div>
-    </div>
+</div>
 
     <!-- 1. 项目总览页面 -->
     <div class="page active" id="page-overview">
@@ -674,7 +672,7 @@
     <!-- 2. 年度台账特征页面 -->
     <div class="page" id="page-yearly-features">
         <h2 class="page-title">各年度台账核心特征</h2>
-        <!-- 新增模糊查询控件 -->
+        <!-- 模糊查询控件 -->
         <div class="search-box">
             <select class="search-select" id="yearlySearchType">
                 <option value="contractNo">合同编号</option>
@@ -1306,9 +1304,9 @@
                     <span class="scenario-tag">广告位出租收益统计与合规核查</span>
                     <span class="scenario-tag">智慧化改造项目合同全流程跟踪</span>
                 </div>
-                <h4>2019年合同清单（示例）</h4>
+                <h4>2022年合同清单（示例）</h4>
                 <div class="table-wrapper">
-                    <table id="contractList-2019">
+                    <table id="contractList-2022">
                         <thead>
                             <tr>
                                 <th>合同编号</th>
@@ -1320,299 +1318,153 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>HT-2019-045</td>
-                                <td>厦门绿环垃圾分类服务有限公司</td>
-                                <td>垃圾分类运营合同</td>
-                                <td>198000</td>
-                                <td>2019-03-05</td>
-                                <td><span class="tag tag-success">已归档</span></td>
-                            </tr>
+                      
+                            <tr><td>HT-2022-001</td><td>示例公司</td><td>物业服务合同</td><td>500000</td><td>2022-01-10</td><td><span class="tag tag-success">已归档</span></td></tr>
                         </tbody>
                     </table>
                 </div>
+            </div>            <!—2023-2026年面板 -->
+              <div class="year-panel" id="panel-2023">
+                <p>2023年台账数据正在整理中...</p>
             </div>
-
-            <!-- 2020年面板 -->
-            <div class="year-panel" id="panel-2020">
-                <div class="stats-grid">
-                    <div class="stats-card">
-                        <span>620+</span>
-                        <p>合同总数</p>
-                    </div>
-                    <div class="stats-card">
-                        <span>290+</span>
-                        <p>收入类合同</p>
-                    </div>
-                    <div class="stats-card">
-                        <span>330+</span>
-                        <p>支出类合同</p>
-                    </div>
-                    <div class="stats-card">
-                        <span>92%+</span>
-                        <p>实际归档率</p>
-                    </div>
-                </div>
-                <h4>核心合同类型</h4>
-                <div class="contract-types">
-                    <span class="type-tag badge-income">疫情期间租金减免补充协议</span>
-                    <span class="type-tag badge-income">物业服务合同</span>
-                    <span class="type-tag badge-income">场地临时租赁协议</span>
-                    <span class="type-tag badge-expense badge-special">疫情防控物资采购合同</span>
-                    <span class="type-tag badge-expense">公共区域消杀服务合同</span>
-                    <span class="type-tag badge-expense">隔离点物业服务合同</span>
-                </div>
-                <h4>特有场景适配</h4>
-                <div class="special-scenarios">
-                    <span class="scenario-tag">疫情租金减免协议专项统计（120+份）</span>
-                    <span class="scenario-tag">防疫物资紧急采购合规性核查</span>
-                    <span class="scenario-tag">隔离点物业服务合同专项审计</span>
-                    <span class="scenario-tag">受疫情影响合同变更与续签统计</span>
-                </div>
-                <h4>2020年合同清单（示例）</h4>
-                <div class="table-wrapper">
-                    <table id="contractList-2020">
-                        <thead>
-                            <tr>
-                                <th>合同编号</th>
-                                <th>客方名称</th>
-                                <th>合同类型</th>
-                                <th>合同金额（元）</th>
-                                <th>签订日期</th>
-                                <th>归档状态</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>HT-2020-012</td>
-                                <td>厦门思明区个体工商户联合会</td>
-                                <td>疫情租金减免补充协议</td>
-                                <td>-180000</td>
-                                <td>2020-04-20</td>
-                                <td><span class="tag tag-success">已归档</span></td>
-                            </tr>
-                            <tr>
-                                <td>HT-2020-028</td>
-                                <td>厦门康泰医疗科技有限公司</td>
-                                <td>疫情防控物资采购合同</td>
-                                <td>320000</td>
-                                <td>2020-02-15</td>
-                                <td><span class="tag tag-success">已归档</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="year-panel" id="panel-2024">
+                <p>2024年台账数据正在整理中...</p>
             </div>
-
-            <!-- 2021-2026年面板（格式同上，仅修改年度特征，此处省略重复结构，完整代码已包含所有年度） -->
-           <!-- 2021年面板 -->
-            <div class="year-panel" id="panel-2021">
-                <div class="stats-grid">
-                    <div class="stats-card">
-                        <span>650+</span>
-                        <p>合同总数</p>
-                    </div>
-                    <div class="stats-card">
-                        <span>380+</span>
-                        <p>收入类合同</p>
-                    </div>
-                    <div class="stats-card">
-                        <span>270+</span>
-                        <p>支出类合同</p>
-                    </div>
-                    <div class="stats-card">
-                        <span>96%+</span>
-                        <p>实际归档率</p>
-                    </div>
-                </div>
-                <h4>核心合同类型</h4>
-                <div class="contract-types">
-                    <span class="type-tag badge-income">后疫情时代物业服务合同</span>
-                    <span class="type-tag badge-income">园区企业复工复产租赁协议</span>
-                    <span class="type-tag badge-income">线上服务平台合作合同</span>
-                    <span class="type-tag badge-expense">环境消杀常态化服务合同</span>
-                    <span class="type-tag badge-expense">智能测温设备采购合同</span>
-                    <span class="type-tag badge-expense">物业人员防疫培训合同</span>
-                </div>
-                <h4>特有场景适配</h4>
-                <div class="special-scenarios">
-                    <span class="scenario-tag">后疫情时代合同续签与变更统计</span>
-                    <span class="scenario-tag">环境消杀常态化服务合规核查</span>
-                    <span class="scenario-tag">智能防疫设备采购与安装全流程跟踪</span>
-                    <span class="scenario-tag">线上物业服务平台合作收益分析</span>
-                </div>
-                <h4>2021年合同清单（示例）</h4>
-                <div class="table-wrapper">
-                    <table id="contractList-2021">
-                        <thead>
-                            <tr>
-                                <th>合同编号</th>
-                                <th>客方名称</th>
-                                <th>合同类型</th>
-                                <th>合同金额（元）</th>
-                                <th>签订日期</th>
-                                <th>归档状态</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>HT-2021-036</td>
-                                <td>厦门智慧园区运营有限公司</td>
-                                <td>智能测温设备采购合同</td>
-                                <td>256000</td>
-                                <td>2021-02-20</td>
-                                <td><span class="tag tag-success">已归档</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="year-panel" id="panel-2025">
+                <p>2025年台账数据正在整理中...</p>
             </div>
-
-            <!-- 补充2022-2026年面板（格式同上） -->
-            <!-- ... -->
-
+            <div class="year-panel" id="panel-2026">
+                <p>2026年台账数据正在整理中...</p>
+            </div>
         </div>
-    </div>
-
-    <!-- 补充其他页面（快速开始、审计比对等）的完整结构 -->
-    <!-- ... -->
-
-    <script>
-        // 补充年度标签切换、模糊查询等交互逻辑
-        document.addEventListener('DOMContentLoaded', function() {
-            // 年度标签切换
-            const yearTabs = document.querySelectorAll('.year-tab');
-            const yearPanels = document.querySelectorAll('.year-panel');
-            yearTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const year = this.dataset.year;
-                    yearTabs.forEach(t => t.classList.remove('active'));
-                    yearPanels.forEach(p => p.classList.remove('active'));
-                    this.classList.add('active');
-                    document.getElementById('panel-' + year).classList.add('active');
-                });
+    </div>                  
+  
+ <script>
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        // 主导航切换
+        document.querySelectorAll('.main-nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.main-nav-item').forEach(nav => nav.classList.remove('active'));
+                document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+                this.classList.add('active');
+                const targetPage = this.getAttribute('data-page');
+                const targetEl = document.getElementById('page-' + targetPage);
+                if (targetEl) targetEl.classList.add('active');
             });
-
-            // 模糊查询逻辑
-            window.yearlyContractSearch = function() {
-                const type = document.getElementById('yearlySearchType').value;
-                const keyword = document.getElementById('yearlySearchInput').value.trim().toLowerCase();
-                if (!keyword) {
-                    alert('请输入查询关键词');
-                    return;
-                }
-                // 示例：仅在当前年度面板中查询
-                const activePanel = document.querySele20ctor('.year-panel.active');
-                const rows = activePanel.querySelectorAll('tbody tr');
-                let found = false;
-                rows.forEach(row => {
-                    const cells = row.querySelectorAll('td');
-                    let text = '';
-                    if (type === 'contractNo') text = cells[0]?.textContent.toLowerCase();
-                    else if (type === 'customer') text = cells[1]?.textContent.toLowerCase();
-                    else if (type === 'type') text = cells[2]?.textContent.toLowerCase();
-                    if (text && text.includes(keyword)) {
-                        row.style.backgroundColor = '#fff8c5';
-                        found = true;
-                    } else {
-                        row.style.backgroundColor = '';
-                    }
-                });
-                if (!found) alert('未找到匹配的合同');
-            };
-
-            window.clearYearlySearch = function() {
-                document.getElementById('yearlySearchInput').value = '';
-                document.querySelectorAll('.year-panel tbody tr').forEach(row => {
-                    row.style.backgroundColor = '';
-                });
-            };
         });
-    </script>
-</body>
-</html>
-// 主导航页面切换
-document.querySelectorAll('.main-nav-item').forEach(item => {
-    item.addEventListener('click', function() {
-        // 清除所有激活状态
-        document.querySelectorAll('.main-nav-item').forEach(nav => nav.classList.remove('active'));
-        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-        // 激活当前选中项
-        this.classList.add('active');
-        const targetPage = this.getAttribute('data-page');
-        document.getElementById('page-' + targetPage).classList.add('active');
+
+        // 年度标签切换
+        const yearTabs = document.querySelectorAll('.year-tab');
+        const yearPanels = document.querySelectorAll('.year-panel');
+        yearTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const year = this.dataset.year;
+                yearTabs.forEach(t => t.classList.remove('active'));
+                yearPanels.forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                const panel = document.getElementById('panel-' + year);
+                if (panel) panel.classList.add('active');
+            });
+        });
     });
-});
-// 年度tab切换
-document.querySelectorAll('.year-tab').forEach(tab => {
-    tab.addEventListener('click', function() {
-        // 清除所有激活状态
-        document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.year-panel').forEach(panel => panel.classList.remove('active'));
-        // 激活当前选中项
-        this.classList.add('active');
-        const targetYear = this.getAttribute('data-year');
-        document.getElementById('panel-' + targetYear).classList.add('active');
-    });
-});
-function diff_charsToLines_(diffs, lineArray) {
-    for (var x = 0; x < diffs.length; x++) {
-        var chars = diffs[x][1];
-        var text = [];
-        for (var y = 0; y < chars.length; y++) {
-            text[y] = lineArray[chars.charCodeAt(y)];
+
+    // 模糊查询函数（挂载到 window 供 onclick 调用）
+    window.yearlyContractSearch = function() {
+        const type = document.getElementById('yearlySearchType').value;
+        const keyword = document.getElementById('yearlySearchInput').value.trim().toLowerCase();
+        if (!keyword) {
+            alert('请输入查询关键词');
+            return;
         }
-        diffs[x][1] = text.join('');
+        const activePanel = document.querySelector('.year-panel.active'); // 修正拼写错误
+        if (!activePanel) return;
+        const rows = activePanel.querySelectorAll('tbody tr');
+        let found = false;
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            let text = '';
+            if (type === 'contractNo') text = cells[0]?.textContent.toLowerCase();
+            else if (type === 'customer') text = cells[1]?.textContent.toLowerCase();
+            else if (type === 'type') text = cells[2]?.textContent.toLowerCase();
+            if (text && text.includes(keyword)) {
+                row.style.backgroundColor = '#fff8c5';
+                found = true;
+            } else {
+                row.style.backgroundColor = '';
+            }
+        });
+        if (!found) alert('未找到匹配的合同');
+    };
+
+    window.clearYearlySearch = function() {
+        document.getElementById('yearlySearchInput').value = '';
+        document.querySelectorAll('.year-panel tbody tr').forEach(row => {
+            row.style.backgroundColor = '';
+        });
+    };
+
+    // 以下为审计比对功能依赖的 diff 相关函数（保持不变）
+    function diff_charsToLines_(diffs, lineArray) {
+        for (var x = 0; x < diffs.length; x++) {
+            var chars = diffs[x][1];
+            var text = [];
+            for (var y = 0; y < chars.length; y++) {
+                text[y] = lineArray[chars.charCodeAt(y)];
+            }
+            diffs[x][1] = text.join('');
+        }
     }
-}
-function diff_cleanupSemantic(diffs) {
-    var changes = false;
-    var equalities = [];
-    var equalitiesLength = 0;
-    var lastEquality = null;
-    var pointer = 0;
-    var length = diffs.length;
-    while (pointer < length) {
-        if (diffs[pointer][0] === 0) {
-            equalities[equalitiesLength++] = pointer;
-            lastEquality = diffs[pointer][1];
-        } else {
-            if (lastEquality !== null) {
-                var prevDiff = diffs[pointer - 1];
-                var nextDiff = diffs[pointer];
-                var overlap = diff_commonOverlap_(prevDiff[1], nextDiff[1]);
-                if (overlap) {
-                    if (overlap >= lastEquality.length) {
-                        prevDiff[1] += lastEquality;
-                        nextDiff[1] = lastEquality + nextDiff[1];
-                        diffs.splice(pointer - 1, 1);
-                        equalitiesLength--;
-                        pointer--;
-                        length--;
-                        lastEquality = equalitiesLength ? diffs[equalities[equalitiesLength - 1]][1] : null;
-                        changes = true;
+
+    function diff_cleanupSemantic(diffs) {
+        var changes = false;
+        var equalities = [];
+        var equalitiesLength = 0;
+        var lastEquality = null;
+        var pointer = 0;
+        var length = diffs.length;
+        while (pointer < length) {
+            if (diffs[pointer][0] === 0) {
+                equalities[equalitiesLength++] = pointer;
+                lastEquality = diffs[pointer][1];
+            } else {
+                if (lastEquality !== null) {
+                    var prevDiff = diffs[pointer - 1];
+                    var nextDiff = diffs[pointer];
+                    var overlap = diff_commonOverlap_(prevDiff[1], nextDiff[1]);
+                    if (overlap) {
+                        if (overlap >= lastEquality.length) {
+                            prevDiff[1] += lastEquality;
+                            nextDiff[1] = lastEquality + nextDiff[1];
+                            diffs.splice(pointer - 1, 1);
+                            equalitiesLength--;
+                            pointer--;
+                            length--;
+                            lastEquality = equalitiesLength ? diffs[equalities[equalitiesLength - 1]][1] : null;
+                            changes = true;
+                        }
                     }
                 }
+                lastEquality = null;
             }
-            lastEquality = null;
+            pointer++;
         }
-        pointer++;
+        return changes;
     }
-    return changes;
-}
 
-function diff_commonOverlap_(text1, text2) {
-    var text1Length = text1.length;
-    var text2Length = text2.length;
-    if (text1Length === 0 || text2Length === 0) {
-        return 0;
-    }
-    var max = 0;
-    var i;
-    for (i = 1; i <= Math.min(text1Length, text2Length); i++) {
-        if (text1.substring(text1Length - i) === text2.substring(0, i)) {
-            max = i;
+    function diff_commonOverlap_(text1, text2) {
+        var text1Length = text1.length;
+        var text2Length = text2.length;
+        if (text1Length === 0 || text2Length === 0) {
+            return 0;
         }
+        var max = 0;
+        var i;
+        for (i = 1; i <= Math.min(text1Length, text2Length); i++) {
+            if (text1.substring(text1Length - i) === text2.substring(0, i)) {
+                max = i;
+            }
+        }
+        return max;
     }
-    return max;
-}
+</script>

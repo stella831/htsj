@@ -683,6 +683,11 @@
             <button class="btn btn-primary" onclick="yearlyContractSearch()">查询</button>
             <button class="btn btn-default" onclick="clearYearlySearch()">清空</button>
         </div>
+<div class="search-box" style="margin-top: 10px;">
+    <button class="btn btn-success" onclick="importExcel()">导入 Excel</button>
+    <button class="btn btn-primary" onclick="exportExcel()">导出 Excel</button>
+    <span style="color: var(--github-light); margin-left: 10px; font-size: 0.9rem;">（仅对当前年度有效）</span>
+</div>
         <div class="year-tabs">
             <div class="year-tab active badge-2014" data-year="2014">2014年</div>
             <div class="year-tab badge-2015" data-year="2015">2015年</div>
@@ -1403,7 +1408,77 @@
             row.style.backgroundColor = '';
         });
     };
+// ===== 新增导入导出功能 =====
+window.importExcel = function() {
+    const activePanel = document.querySelector('.year-panel.active');
+    if (!activePanel) return;
+    const year = activePanel.id.replace('panel-', '');
+    const table = activePanel.querySelector('table');
+    if (!table) return;
 
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.xls, .xlsx';
+    fileInput.onchange = function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(loadEvent) {
+            const data = new Uint8Array(loadEvent.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            if (rows.length < 2) {
+                alert('Excel 文件至少需要标题行和数据行');
+                return;
+            }
+            const headers = rows[0];
+            const dataRows = rows.slice(1);
+
+            const tbody = table.querySelector('tbody');
+            tbody.innerHTML = '';
+
+            dataRows.forEach(row => {
+                const tr = document.createElement('tr');
+                headers.forEach((_, index) => {
+                    const td = document.createElement('td');
+                    td.textContent = row[index] !== undefined ? row[index] : '';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            alert(`已从 Excel 导入 ${dataRows.length} 条合同到 ${year} 年`);
+        };
+        reader.readAsArrayBuffer(file);
+    };
+    fileInput.click();
+};
+
+window.exportExcel = function() {
+    const activePanel = document.querySelector('.year-panel.active');
+    if (!activePanel) return;
+    const year = activePanel.id.replace('panel-', '');
+    const table = activePanel.querySelector('table');
+    if (!table) return;
+
+    const headers = [];
+    table.querySelectorAll('thead th').forEach(th => headers.push(th.textContent));
+
+    const data = [];
+    table.querySelectorAll('tbody tr').forEach(row => {
+        const rowData = [];
+        row.querySelectorAll('td').forEach(td => rowData.push(td.textContent));
+        data.push(rowData);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const wsData = [headers, ...data];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb, ws, year + '年合同');
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    saveAs(blob, `兆翔物业_${year}年合同台账.xlsx`);
+};
     // 以下为审计比对功能依赖的 diff 相关函数（保持不变）
     function diff_charsToLines_(diffs, lineArray) {
         for (var x = 0; x < diffs.length; x++) {

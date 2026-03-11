@@ -1338,11 +1338,73 @@
             <div class="year-panel" id="panel-2025">
                 <p>2025年台账数据正在整理中...</p>
             </div>
+    <!-- 2026年面板 -->
             <div class="year-panel" id="panel-2026">
-                <p>2026年台账数据正在整理中...</p>
-            </div>
+    <div class="stats-grid">
+        <div class="stats-card">
+            <span>170+</span>
+            <p>合同总数</p>
         </div>
-    </div>                  
+        <div class="stats-card">
+            <span>80+</span>
+            <p>收入类合同</p>
+        </div>
+        <div class="stats-card">
+            <span>90+</span>
+            <p>支出类合同</p>
+        </div>
+        <div class="stats-card">
+            <span>95%+</span>
+            <p>实际归档率</p>
+        </div>
+    </div>
+    <h4>核心合同类型</h4>
+    <div class="contract-types">
+        <span class="type-tag badge-income">物业服务合同</span>
+        <span class="type-tag badge-income">租赁合同</span>
+        <span class="type-tag badge-expense">工程施工/服务合同</span>
+        <span class="type-tag badge-expense">设备采购合同</span>
+        <span class="type-tag badge-expense">维保服务合同</span>
+        <span class="type-tag badge-special">补充/减租协议</span>
+    </div>
+    <h4>2026年合同清单</h4>
+    <div class="table-wrapper">
+        <table id="contractList-2026">
+            <thead>
+                <tr>
+                    <th>合同编号</th>
+                    <th>申请时间</th>
+                    <th>分发日期</th>
+                    <th>合同名称</th>
+                    <th>客方/收费单位</th>
+                    <th>合同金额</th>
+                    <th>签订时间</th>
+                    <th>经办部门</th>
+                    <th>经办人</th>
+                    <th>负责部门</th>
+                    <th>合同类型</th>
+                    <th>备注</th>
+                    <th>份数</th>
+                    <th>归档日期</th>
+                    <th>合同期限-起始</th>
+                    <th>合同期限-结束</th>
+                    <th>是否归档</th>
+                    <th>是否及时归档</th>
+                    <th>签订日期是否早于审批日期</th>
+                    <th>原因</th>
+                    <th>履约时间是否早于审批日期</th>
+                    <th>原因</th>
+                    <th>到期提醒</th>
+                    <th>当月考核数量</th>
+                    <th>最终备注</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 导入的合同数据会自动填充到这里 -->
+            </tbody>
+        </table>
+    </div>
+</div>              
   
  <script>
     // 页面加载完成后执行
@@ -1414,7 +1476,30 @@ window.importExcel = function() {
     if (!activePanel) return;
     const year = activePanel.id.replace('panel-', '');
     const table = activePanel.querySelector('table');
-    if (!table) return;
+    // 修复：无表格时提示，不会默认导入到2014年
+    if (!table) {
+        alert(`${year}年面板暂无表格容器，请先完善页面结构后再导入`);
+        return;
+    }
+
+    // 分年度表头映射规则，和页面表格、Excel表头完全匹配
+    const yearHeaderConfig = {
+        // 2014年原有表头，保持不变
+        "2014": [
+            "合同编号", "客方名称", "合同类型", "合同金额（元）", "签订日期", "归档状态"
+        ],
+        // 2026年完整表头，和你提供的Excel台账、上面新增的表格完全对应
+        "2026": [
+            "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位", "合同金额",
+            "签订时间", "经办部门", "经办人", "负责部门", "合同类型", "备注", "份数",
+            "归档日期", "合同期限-起始", "合同期限-结束", "是否 归档", "是否及时归档（分发日起3个月内完成归档）",
+            "合同签订日期是否早于审批日期（分发时间）", "原因", "合同履约时间是否早于审批日期（申请时间）",
+            "原因", "到期提醒", "当月考核数量", "备注"
+        ]
+    };
+
+    // 获取当前年度的标准表头
+    const targetHeaders = yearHeaderConfig[year] || yearHeaderConfig["2014"];
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -1426,33 +1511,52 @@ window.importExcel = function() {
             const data = new Uint8Array(loadEvent.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            // 按表头名称读取数据，解决列错位问题
+            const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 'A' });
             if (rows.length < 2) {
                 alert('Excel 文件至少需要标题行和数据行');
                 return;
             }
-            const headers = rows[0];
-            const dataRows = rows.slice(1);
+
+            // 提取Excel表头行（第一行）
+            const excelHeaderRow = rows[0];
+            const excelHeaderMap = {};
+            // 建立Excel列名和列号的映射
+            Object.keys(excelHeaderRow).forEach(colKey => {
+                const headerName = excelHeaderRow[colKey]?.toString().trim() || '';
+                if (headerName) {
+                    excelHeaderMap[headerName] = colKey;
+                }
+            });
 
             const tbody = table.querySelector('tbody');
             tbody.innerHTML = '';
+            let successCount = 0;
 
-            dataRows.forEach(row => {
+            // 从第二行开始遍历数据
+            for (let i = 1; i < rows.length; i++) {
+                const rowData = rows[i];
                 const tr = document.createElement('tr');
-                headers.forEach((_, index) => {
+                // 按当前年度的标准表头顺序填充单元格
+                targetHeaders.forEach(header => {
                     const td = document.createElement('td');
-                    td.textContent = row[index] !== undefined ? row[index] : '';
+                    // 匹配Excel里的对应列
+                    const excelColKey = excelHeaderMap[header];
+                    td.textContent = excelColKey && rowData[excelColKey] !== undefined 
+                        ? rowData[excelColKey] 
+                        : '';
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
-            });
-            alert(`已从 Excel 导入 ${dataRows.length} 条合同到 ${year} 年`);
+                successCount++;
+            }
+
+            alert(`已从 Excel 导入 ${successCount} 条合同到 ${year} 年，表头已自动匹配`);
         };
         reader.readAsArrayBuffer(file);
     };
     fileInput.click();
 };
-
 window.exportExcel = function() {
     const activePanel = document.querySelector('.year-panel.active');
     if (!activePanel) return;

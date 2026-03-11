@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
    <meta charset="UTF-8">
@@ -676,30 +677,7 @@
        <!-- 模糊查询控件 -->
        <div class="search-box">
            <select class="search-select" id="yearlySearchType">
-               <!-- 全字段一键查询 -->
-               <option value="all">全字段模糊查询</option>
-               <!-- 2026年表格全字段选项 -->
-               <option value="0">合同编号</option>
-               <option value="1">申请时间</option>
-               <option value="2">分发日期</option>
-               <option value="3">合同名称</option>
-               <option value="4">客方/收费单位</option>
-               <option value="5">合同金额</option>
-               <option value="6">签订时间</option>
-               <option value="7">经办部门</option>
-               <option value="8">经办人</option>
-               <option value="9">负责部门</option>
-               <option value="10">合同类型</option>
-               <option value="11">备注</option>
-               <option value="12">份数</option>
-               <option value="13">归档日期</option>
-               <option value="14">合同期限-起始</option>
-               <option value="15">合同期限-结束</option>
-               <option value="16">是否归档</option>
-               <option value="17">是否及时归档</option>
-               <option value="18">签订日期是否早于审批日期</option>
-               <option value="20">履约时间是否早于审批日期</option>
-               <option value="25">最终备注</option>
+               <!-- 选项将由JS动态生成，无需静态定义 -->
            </select>
            <input type="text" class="search-input" id="yearlySearchInput" placeholder="输入关键词模糊查询...">
            <button class="btn btn-primary" onclick="yearlyContractSearch()">查询</button>
@@ -1513,6 +1491,99 @@
            });
        }
  
+       // 更新筛选下拉框选项（基于当前表格的列标题）
+       function updateSearchOptions() {
+           const activePanel = document.querySelector('.year-panel.active');
+           if (!activePanel) return;
+           const table = activePanel.querySelector('table');
+           if (!table) return;
+       
+           const headerCells = table.querySelectorAll('thead th');
+           const select = document.getElementById('yearlySearchType');
+           select.innerHTML = ''; // 清空原有选项
+       
+           // 添加“全字段模糊查询”选项
+           const allOption = document.createElement('option');
+           allOption.value = 'all';
+           allOption.textContent = '全字段模糊查询';
+           select.appendChild(allOption);
+       
+           // 为每个列标题添加选项
+           headerCells.forEach((th, index) => {
+               const headerText = th.textContent.trim();
+               if (headerText) {
+                   const option = document.createElement('option');
+                   option.value = `col_${index}`; // 使用 col_索引 作为值
+                   option.textContent = headerText;
+                   select.appendChild(option);
+               }
+           });
+       }
+ 
+       // 模糊查询函数（挂载到 window 供 onclick 调用）
+       window.yearlyContractSearch = function() {
+           const searchType = document.getElementById('yearlySearchType').value;
+           const keyword = document.getElementById('yearlySearchInput').value.trim().toLowerCase();
+           if (!keyword) {
+               alert('请输入查询关键词');
+               return;
+           }
+       
+           const activePanel = document.querySelector('.year-panel.active');
+           if (!activePanel) return;
+           const table = activePanel.querySelector('table');
+           if (!table) return;
+       
+           const headerCells = table.querySelectorAll('thead th');
+           const rows = table.querySelectorAll('tbody tr');
+           let found = false;
+       
+           if (searchType === 'all') {
+               rows.forEach(row => {
+                   const cells = row.querySelectorAll('td');
+                   let allText = '';
+                   cells.forEach(cell => allText += cell.textContent.toLowerCase() + ' ');
+                   const isMatch = allText.includes(keyword);
+                   row.style.backgroundColor = isMatch ? '#fff8c5' : '';
+                   if (isMatch) {
+                       row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                       found = true;
+                   }
+               });
+           } else {
+               const colIndex = parseInt(searchType.replace('col_', ''), 10);
+               if (isNaN(colIndex) || colIndex < 0 || colIndex >= headerCells.length) {
+                   alert('无效的列选择');
+                   return;
+               }
+       
+               rows.forEach(row => {
+                   const cells = row.querySelectorAll('td');
+                   if (cells.length > colIndex) {
+                       const cellText = cells[colIndex].textContent.toLowerCase();
+                       const isMatch = cellText.includes(keyword);
+                       row.style.backgroundColor = isMatch ? '#fff8c5' : '';
+                       if (isMatch) {
+                           row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                           found = true;
+                       }
+                   } else {
+                       row.style.backgroundColor = '';
+                   }
+               });
+           }
+       
+           if (!found) alert('未找到匹配的合同数据');
+       };
+       
+       window.clearYearlySearch = function() {
+           document.getElementById('yearlySearchInput').value = '';
+           document.getElementById('yearlySearchType').value = 'all';
+           document.querySelectorAll('.year-panel tbody tr').forEach(row => {
+               row.style.backgroundColor = '';
+           });
+       };
+ 
        // 导入Excel函数
        window.importExcel = function() {
            const activePanel = document.querySelector('.year-panel.active');
@@ -1644,59 +1715,6 @@
            saveAs(blob, `兆翔物业_${year}年合同台账.xlsx`);
        };
  
-       // 模糊查询函数（挂载到 window 供 onclick 调用）
-       window.yearlyContractSearch = function() {
-           const searchType = document.getElementById('yearlySearchType').value;
-           const keyword = document.getElementById('yearlySearchInput').value.trim().toLowerCase();
-           if (!keyword) {
-               alert('请输入查询关键词');
-               return;
-           }
-           const activePanel = document.querySelector('.year-panel.active');
-           if (!activePanel) return;
-           const rows = activePanel.querySelectorAll('tbody tr');
-           let found = false;
-           
-           rows.forEach(row => {
-               const cells = row.querySelectorAll('td');
-               let isMatch = false;
-               
-               // 全字段模糊查询
-               if (searchType === 'all') {
-                   let allText = '';
-                   cells.forEach(cell => allText += cell.textContent.toLowerCase() + ' ');
-                   isMatch = allText.includes(keyword);
-               }
-               // 指定列精准查询
-               else {
-                   const colIndex = parseInt(searchType);
-                   if (cells[colIndex]) {
-                       const cellText = cells[colIndex].textContent.toLowerCase();
-                       isMatch = cellText.includes(keyword);
-                   }
-               }
-               
-               // 高亮匹配行+自动滚动到对应位置
-               if (isMatch) {
-                   row.style.backgroundColor = '#fff8c5';
-                   row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                   found = true;
-               } else {
-                   row.style.backgroundColor = '';
-               }
-           });
-           
-           if (!found) alert('未找到匹配的合同数据');
-       };
-       
-       window.clearYearlySearch = function() {
-           document.getElementById('yearlySearchInput').value = '';
-           document.getElementById('yearlySearchType').value = 'all';
-           document.querySelectorAll('.year-panel tbody tr').forEach(row => {
-               row.style.backgroundColor = '';
-           });
-       };
- 
        // 以下为审计比对功能依赖的 diff 相关函数（保持不变）
        function diff_charsToLines_(diffs, lineArray) {
            for (var x = 0; x < diffs.length; x++) {
@@ -1787,18 +1805,20 @@
                    const panel = document.getElementById('panel-' + year);
                    if (panel) panel.classList.add('active');
                    
-                   // 切换年度时，自动加载已永久保存的合同数据
+                   // 加载该年度数据并更新筛选下拉框
                    const contractData = getContractData(year);
                    renderContractTable(year, contractData);
+                   updateSearchOptions(); // 关键：切换年度时重新生成下拉选项
                });
            });
            
-           // 页面加载完成后，自动加载当前激活年度的数据
+           // 初始化：加载当前激活年度的数据，并更新下拉选项
            const activeYearTab = document.querySelector('.year-tab.active');
            if (activeYearTab) {
                const activeYear = activeYearTab.dataset.year;
                const activeData = getContractData(activeYear);
                renderContractTable(activeYear, activeData);
+               updateSearchOptions();
            }
        });
    </script>

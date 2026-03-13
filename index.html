@@ -1335,7 +1335,7 @@
            <div class="year-panel" id="panel-2024">
                <p>2024年台账数据正在整理中...</p>
            </div>
-          <!-- 2025年面板（按图片类目，28列） -->
+      <!-- 2025年面板（按最新列顺序，共23列） -->
 <div class="year-panel" id="panel-2025">
     <div class="stats-grid">
         <div class="stats-card">
@@ -1364,34 +1364,40 @@
         <span class="type-tag badge-expense">工程施工合同</span>
         <span class="type-tag badge-special">补充协议</span>
     </div>
-    <h4>2025年合同清单（按图片列名）</h4>
+    <h4>2025年合同清单（按最新列顺序）</h4>
     <div class="table-wrapper">
         <table id="contractList-2025">
-    <thead>
-        <tr>
-            <th>项目说明</th>
-            <th>客方名称</th>
-            <th>合同金额</th>
-            <th>签订时间</th>
-            <th>经办部门</th>
-            <th>经办部门负责人</th>
-            <th>合同类型</th>
-            <th>归档日期</th>
-            <th>合同期限-起始</th>
-            <th>合同期限-结束</th>
-            <th>是否及时归档</th>
-            <th>是否早于审批日期</th>
-            <th>原因</th>
-            <th>合同履行时间</th>
-            <th>到期提醒</th>
-            <th>当月考核数量</th>
-            <th>备注</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr><td colspan="17" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
-    </tbody>
-</table>
+            <thead>
+                <tr>
+                    <th>合同编号</th>
+                    <th>申请时间</th>
+                    <th>分发日期</th>
+                    <th>合同名称</th>
+                    <th>客方/收费单位</th>
+                    <th>合同金额-合同总金额</th>
+                    <th>合同金额-每月费用</th>
+                    <th>合同金额-其他</th>
+                    <th>签订时间</th>
+                    <th>经办部门</th>
+                    <th>负责部门</th>
+                    <th>经办人</th>
+                    <th>合同类型</th>
+                    <th>备注</th>
+                    <th>份数</th>
+                    <th>归档日期</th>
+                    <th>合同期限-起始</th>
+                    <th>合同期限-结束</th>
+                    <th>是否归档</th>
+                    <th>是否及时归档（分发日起3个月内完成归档）</th>
+                    <th>到期提醒</th>
+                    <th>备注2</th>
+                    <th>当月考核数量</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="23" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
            <!-- 2026年面板 -->
@@ -1526,16 +1532,15 @@
 if (!data || data.length === 0) {
     const emptyTr = document.createElement('tr');
     const emptyTd = document.createElement('td');
-    // 动态获取表头列数，避免因列数变化导致显示不全
-    const headerCount = table.querySelectorAll('thead th').length;
-    emptyTd.colSpan = headerCount || 1;  // 如果获取不到，默认设为1
+    const headerCount = table.querySelectorAll('thead th').length; // 动态获取
+    emptyTd.colSpan = headerCount || 1;
     emptyTd.textContent = '暂无合同数据，请导入Excel';
     emptyTd.style.textAlign = 'center';
     emptyTd.style.color = '#656d76';
     emptyTr.appendChild(emptyTd);
     tbody.appendChild(emptyTr);
     return;
-}           
+}          
            // 渲染数据到表格
            data.forEach(row => {
                const tr = document.createElement('tr');
@@ -1656,23 +1661,29 @@ if (!data || data.length === 0) {
          const yearHeaderConfig = {
     "2014": ["合同编号", "客方名称", "合同类型", "合同金额（元）", "签订日期", "归档状态"],
     "2025": [
-    "项目说明",
-    "客方名称",          // 新增
-    "合同金额",          // 新增
+    "合同编号",
+    "申请时间",
+    "分发日期",
+    "合同名称",
+    "客方/收费单位",
+    "合同金额-合同总金额",
+    "合同金额-每月费用",
+    "合同金额-其他",
     "签订时间",
     "经办部门",
-    "经办部门负责人",
+    "负责部门",
+    "经办人",
     "合同类型",
+    "备注",
+    "份数",
     "归档日期",
     "合同期限-起始",
     "合同期限-结束",
-    "是否及时归档",
-    "是否早于审批日期",
-    "原因",
-    "合同履行时间",
+    "是否归档",
+    "是否及时归档（分发日起3个月内完成归档）",
     "到期提醒",
-    "当月考核数量",
-    "备注"
+    "备注2",
+    "当月考核数量"
 ],
     "2026": [
         "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位", "合同金额",

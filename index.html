@@ -1335,8 +1335,8 @@
            <div class="year-panel" id="panel-2024">
                <p>2024年台账数据正在整理中...</p>
            </div>
-      <!-- 2025年面板（按最新列顺序，共23列） -->
-<div class="year-panel" id="panel-2025">
+      <!-- 2024年面板（按最新列顺序，共23列） -->
+<div class="year-panel" id="panel-2024">
     <div class="stats-grid">
         <div class="stats-card">
             <span>待统计</span>
@@ -1364,9 +1364,9 @@
         <span class="type-tag badge-expense">工程施工合同</span>
         <span class="type-tag badge-special">补充协议</span>
     </div>
-    <h4>2025年合同清单（按最新列顺序）</h4>
+    <h4>2024年合同清单（按最新列顺序）</h4>
     <div class="table-wrapper">
-        <table id="contractList-2025">
+        <table id="contractList-2024">
             <thead>
                 <tr>
                     <th>合同编号</th>
@@ -1396,6 +1396,72 @@
             </thead>
             <tbody>
                 <tr><td colspan="23" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- 2025年面板（与2024年列顺序一致，共24列） -->
+<div class="year-panel" id="panel-2025">
+    <div class="stats-grid">
+        <div class="stats-card">
+            <span>待统计</span>
+            <p>合同总数</p>
+        </div>
+        <div class="stats-card">
+            <span>待统计</span>
+            <p>收入类合同</p>
+        </div>
+        <div class="stats-card">
+            <span>待统计</span>
+            <p>支出类合同</p>
+        </div>
+        <div class="stats-card">
+            <span>待统计</span>
+            <p>归档率</p>
+        </div>
+    </div>
+    <h4>核心合同类型（示例）</h4>
+    <div class="contract-types">
+        <span class="type-tag badge-income">物业服务合同</span>
+        <span class="type-tag badge-income">保洁服务合同</span>
+        <span class="type-tag badge-income">租赁合同</span>
+        <span class="type-tag badge-expense">设备维保合同</span>
+        <span class="type-tag badge-expense">工程施工合同</span>
+        <span class="type-tag badge-special">补充协议</span>
+    </div>
+    <h4>2025年合同清单</h4>
+    <div class="table-wrapper">
+        <table id="contractList-2025">
+            <thead>
+                <tr>
+                    <th>合同编号</th>
+                    <th>申请时间</th>
+                    <th>分发日期</th>
+                    <th>合同名称</th>
+                    <th>客方/收费单位</th>
+                    <th>合同金额</th>
+                    <th>签订时间</th>
+                    <th>经办部门</th>
+                    <th>负责部门</th>
+                    <th>经办人</th>
+                    <th>合同类型</th>
+                    <th>备注</th>
+                    <th>份数</th>
+                    <th>归档日期</th>
+                    <th>合同期限-起始</th>
+                    <th>合同期限-结束</th>
+                    <th>是否归档</th>
+                    <th>是否及时归档（分发日起3个月内完成归档）</th>
+                    <th>合同签订日期是否早于审批日期（分发时间）</th>
+                    <th>原因</th>
+                    <th>合同履约时间是否早于审批日期（申请时间）</th>
+                    <th>原因2</th>
+                    <th>到期提醒</th>
+                    <th>备注2</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="24" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
             </tbody>
         </table>
     </div>
@@ -1660,7 +1726,7 @@ if (!data || data.length === 0) {
            // 分年度表头映射规则
          const yearHeaderConfig = {
     "2014": ["合同编号", "客方名称", "合同类型", "合同金额（元）", "签订日期", "归档状态"],
-    "2025": [
+    "2024": [
     "合同编号",
     "申请时间",
     "分发日期",
@@ -1685,6 +1751,32 @@ if (!data || data.length === 0) {
     "备注2",
     "当月考核数量"
 ],
+"2025": [
+    "合同编号",
+    "申请时间",
+    "分发日期",
+    "合同名称",
+    "客方/收费单位",
+    "合同金额",
+    "签订时间",
+    "经办部门",
+    "负责部门",
+    "经办人",
+    "合同类型",
+    "备注",
+    "份数",
+    "归档日期",
+    "合同期限-起始",
+    "合同期限-结束",
+    "是否归档",
+    "是否及时归档（分发日起3个月内完成归档）",
+    "合同签订日期是否早于审批日期（分发时间）",
+    "原因",
+    "合同履约时间是否早于审批日期（申请时间）",
+    "原因2",
+    "到期提醒",
+    "备注2"
+]
     "2026": [
         "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位", "合同金额",
         "签订时间", "经办部门", "经办人", "负责部门", "合同类型", "备注", "份数",
@@ -1775,7 +1867,7 @@ if (!data || data.length === 0) {
            // 对应年度的表头
            const yearHeaderConfig = {
                "2014": ["合同编号", "客方名称", "合同类型", "合同金额（元）", "签订日期", "归档状态"],
-  "2025": [ "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位", "合同金额","签订时间", "经办部门", "经办人", "负责部门", "合同类型", "备注", "份数","归档日期", "合同期限-起始", "合同期限-结束", "是否 归档", "是否及时归档（分发日起3个月内完成归档）",
+  "2024": [ "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位", "合同金额","签订时间", "经办部门", "经办人", "负责部门", "合同类型", "备注", "份数","归档日期", "合同期限-起始", "合同期限-结束", "是否 归档", "是否及时归档（分发日起3个月内完成归档）",
                    "合同签订日期是否早于审批日期（分发时间）", "原因", "合同履约时间是否早于审批日期（申请时间）",
                    "原因", "到期提醒", "当月考核数量", "备注"],
                "2026": [

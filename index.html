@@ -790,6 +790,7 @@
                        </tbody>
                    </table>
                </div>
+</div>
           <!-- 2015年面板（17列） -->
 <div class="year-panel" id="panel-2015">
     <div class="stats-grid">
@@ -835,7 +836,8 @@
                 <tr><td colspan="17" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
             </tbody>
         </table>
-    </div>
+</div>
+</div>
           <!-- 2016年面板（按指定顺序，共17列） -->
 <div class="year-panel" id="panel-2016">
     <div class="stats-grid">
@@ -893,7 +895,8 @@
                 <tr><td colspan="17" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
             </tbody>
         </table>
-    </div>
+</div>
+</div>
         <!-- 2017年面板（按指定顺序，共17列） -->
 <div class="year-panel" id="panel-2017">
     <div class="stats-grid">
@@ -951,7 +954,8 @@
                 <tr><td colspan="17" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
             </tbody>
         </table>
-    </div>
+</div>
+</div>
           <!-- 2018年面板（按指定顺序，共18列） -->
 <div class="year-panel" id="panel-2018">
     <div class="stats-grid">
@@ -1011,6 +1015,7 @@
             </tbody>
         </table>
 </div>
+</div>
 <!-- 2019年面板（19列） -->
 <div class="year-panel" id="panel-2019">
     <div class="stats-grid">
@@ -1058,7 +1063,8 @@
                 <tr><td colspan="19" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
             </tbody>
         </table>
-    </div>
+</div>
+</div>
          <!-- 2020年面板（按指定顺序，共18列） -->
 <div class="year-panel" id="panel-2020">
     <div class="stats-grid">
@@ -1117,7 +1123,8 @@
                 <tr><td colspan="18" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
             </tbody>
         </table>
-    </div> 
+</div> 
+</div>
      <!-- 2021年面板（按指定顺序，共20列） -->
 <div class="year-panel" id="panel-2021">
     <div class="stats-grid">
@@ -1178,6 +1185,7 @@
                 <tr><td colspan="20" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
             </tbody>
         </table>
+</div>
 </div>
    <!-- 2022年面板（按指定顺序，共20列） -->
 <div class="year-panel" id="panel-2022">
@@ -1240,7 +1248,7 @@
             </tbody>
         </table>
     </div>
-        
+       </div> 
     <!-- 2023年面板（按指定顺序，共21列） -->
 <div class="year-panel" id="panel-2023">
     <div class="stats-grid">
@@ -1302,6 +1310,7 @@
                 <tr><td colspan="21" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
             </tbody>
         </table>
+</div>
 </div>
 <!-- 2024年面板（按最新列顺序，共24列） -->
 <div class="year-panel" id="panel-2024">
@@ -1367,7 +1376,8 @@
                 <tr><td colspan="24" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
             </tbody>
         </table>
-    </div>
+</div>
+</div>
 <!-- 2025年面板（与2024年列顺序一致，共24列） -->
 <div class="year-panel" id="panel-2025">
     <div class="stats-grid">
@@ -1432,6 +1442,7 @@
                 <tr><td colspan="24" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
             </tbody>
         </table>
+</div>
 </div>
            <!-- 2026年面板 -->
            <div class="year-panel" id="panel-2026">
@@ -1835,6 +1846,7 @@ if (!data || data.length === 0) {
                    
                    // 永久保存数据，覆盖原有合同数据
                    saveContractData(year, newContractData);
+renderContractTable(year, newContractData);
                    alert(`已导入 ${successCount} 条合同到 ${year} 年，日期已自动格式化，数据已永久保存！`);
                };
                reader.readAsArrayBuffer(file);

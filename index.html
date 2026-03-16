@@ -1507,23 +1507,31 @@
        }
         
        // 通用日期格式化，兼容所有日期格式
-       function formatDate(dateStr) {
-           if (!dateStr) return '';
-           // 处理Excel日期序列号
-           if (!isNaN(dateStr) && dateStr > 40000) {
-               return excelDateToJSDate(dateStr);
-           }
-           // 处理其他格式日期，统一转成YYYY-MM-DD
-           const date = new Date(dateStr);
-           if (!isNaN(date.getTime())) {
-               const year = date.getFullYear();
-               const month = String(date.getMonth() + 1).padStart(2, '0');
-               const day = String(date.getDate()).padStart(2, '0');
-               return `${year}-${month}-${day}`;
-           }
-           return dateStr;
-       }
- 
+      function formatDate(dateStr) {
+    if (!dateStr) return '';
+    // 处理Excel日期序列号
+    if (!isNaN(dateStr) && dateStr > 40000) {
+        return excelDateToJSDate(dateStr);
+    }
+    // 兼容2014年 MM/DD/YY 格式（如1/3/14 → 2014-01-03）
+    const mmddyyReg = /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/;
+    if (mmddyyReg.test(dateStr)) {
+        const [, m, d, y] = dateStr.match(mmddyyReg);
+        const year = `20${y}`; // 固定为20xx年，匹配2014台账
+        const month = String(m).padStart(2, '0');
+        const day = String(d).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    // 常规日期格式化
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    return dateStr;
+} 
        // 保存合同数据到浏览器本地（永久存储，刷新/关闭浏览器不丢失）
        function saveContractData(year, data) {
            const key = `contractData_${year}`;
@@ -1689,8 +1697,8 @@ if (!data || data.length === 0) {
     "合同金额-其他",
     "合同期限-起始",
     "合同期限-结束",
-    "合同乙方",
-    "收费单位",
+    "合同乙方",  // 无空格
+    "收费单位",  // 无空格
     "合同履行",
     "违约情况",
     "合同是否到期",
@@ -1794,6 +1802,10 @@ if (!data || data.length === 0) {
                    const workbook = XLSX.read(data, { type: 'array' });
                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                    const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 'A' });
+const filterRows = rows.filter(row => {
+    const rowStr = JSON.stringify(row).toLowerCase();
+    return !rowStr.includes('我司未走流程') && !rowStr.includes('序号|合同审批号') && row.some(cell => cell);
+});
                    if (rows.length < 2) {
                        alert('Excel 文件至少需要标题行和数据行');
                        return;

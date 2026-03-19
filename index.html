@@ -1975,281 +1975,267 @@ htsj/
 
        // 新增：全局存储各年度筛选后的临时结果，key=年份，value=筛选后数据
        window.filteredContractData = {};
+// ========== 常量定义（统一管理，放在最开头） ==========
+// 固定登录账号密码
+const LOGIN_ACCOUNT = 'jiandu';
+const LOGIN_PWD = '000000';
+// 登录状态存储key
+const LOGIN_KEY = 'contract_system_login_status';
+// 全局存储各年度筛选后的临时结果，key=年份，value=筛选后数据
+window.filteredContractData = {};
 
-       // 登录验证函数（手动输入账号密码，无硬编码）
-       window.loginCheck = function() {
-           const inputAccount = document.getElementById('loginAccount').value.trim();
-           const inputPwd = document.getElementById('loginPwd').value.trim();
-           const tipElement = document.getElementById('loginTip');
+// ========== 登录核心功能（仅保留1份，全挂载到window，无重复） ==========
+// 登录验证函数（固定账号jiandu/000000校验）
+window.loginCheck = function() {
+    // 安全获取DOM元素，判空防止报错
+    const inputAccount = document.getElementById('loginAccount');
+    const inputPwd = document.getElementById('loginPwd');
+    const tipElement = document.getElementById('loginTip');
+    if (!inputAccount || !inputPwd || !tipElement) {
+        alert('页面加载异常，请刷新页面重试');
+        return;
+    }
 
-           // 空值校验
-           if (!inputAccount || !inputPwd) {
-               tipElement.textContent = '请输入完整的账号和密码';
-               return;
-           }
+    // 获取输入值
+    const account = inputAccount.value.trim();
+    const pwd = inputPwd.value.trim();
 
-           // 直接存储登录状态（不校验固定账号密码，仅验证输入非空）
-           // 若需自定义账号密码校验，可在此处添加逻辑（如 inputAccount === '自定义账号' && inputPwd === '自定义密码'）
-           localStorage.setItem(LOGIN_KEY, 'logined');
-           document.getElementById('loginPage').style.display = 'none';
-           document.getElementById('mainApp').style.display = 'block';
-           tipElement.textContent = '';
-       };
+    // 空值校验
+    if (!account || !pwd) {
+        tipElement.textContent = '请输入完整的账号和密码';
+        return;
+    }
 
-       // 退出登录函数（挂载到window）
-       window.logout = function() {
-           localStorage.removeItem(LOGIN_KEY);
-           window.location.reload();
-       };
+    // 账号密码正确性校验
+    if (account === LOGIN_ACCOUNT && pwd === LOGIN_PWD) {
+        // 登录成功逻辑
+        localStorage.setItem(LOGIN_KEY, 'logined');
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        tipElement.textContent = '';
+    } else {
+        // 登录失败逻辑
+        tipElement.textContent = '账号或密码错误，请重新输入';
+        inputPwd.value = ''; // 清空密码框，提升体验
+    }
+};
 
-       // 校验登录状态函数（挂载到window）
-       window.checkLogin = function() {
-           const isLogined = localStorage.getItem(LOGIN_KEY) === 'logined';
-           if (isLogined) {
-               document.getElementById('loginPage').style.display = 'none';
-               document.getElementById('mainApp').style.display = 'block';
-               return true;
-           }
-           document.getElementById('loginPage').style.display = 'flex';
-           document.getElementById('mainApp').style.display = 'none';
-           return false;
-       };
-           const inputAccount = document.getElementById('loginAccount').value.trim();
-           const inputPwd = document.getElementById('loginPwd').value.trim();
-           const tipElement = document.getElementById('loginTip');
+// 退出登录函数（挂载到window）
+window.logout = function() {
+    localStorage.removeItem(LOGIN_KEY);
+    window.location.reload();
+};
 
-           // 空值校验
-           if (!inputAccount || !inputPwd) {
-               tipElement.textContent = '请输入完整的账号和密码';
-               return;
-           }
+// 校验登录状态函数（挂载到window，全局统一调用）
+window.checkLogin = function() {
+    const isLogined = localStorage.getItem(LOGIN_KEY) === 'logined';
+    if (isLogined) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        return true;
+    }
+    document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+    return false;
+};
 
-           // 账号密码校验
-           if (inputAccount === LOGIN_ACCOUNT && inputPwd === LOGIN_PWD) {
-               localStorage.setItem(LOGIN_KEY, 'logined');
-               // 隐藏登录页，显示主系统
-               document.getElementById('loginPage').style.display = 'none';
-               document.getElementById('mainApp').style.display = 'block';
-               tipElement.textContent = '';
-           } else {
-               tipElement.textContent = '账号或密码错误，请重新输入';
-           }
-       };
+// ========== 日期处理相关函数 ==========
+// Excel日期序列号转标准YYYY-MM-DD格式（解决Excel日期变成数字的问题）
+function excelDateToJSDate(serial) {
+    if (!serial || isNaN(serial)) return serial;
+    const utcDays = Math.floor(serial - 25569);
+    const utcValue = utcDays * 86400 * 1000;
+    const dateInfo = new Date(utcValue);
+    const year = dateInfo.getFullYear();
+    const month = String(dateInfo.getMonth() + 1).padStart(2, '0');
+    const day = String(dateInfo.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
-       // 退出登录函数
-       window.logout = function() {
-           localStorage.removeItem(LOGIN_KEY);
-           window.location.reload();
-       };
+// 通用日期格式化，兼容所有日期格式
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    // 处理Excel日期序列号
+    if (!isNaN(dateStr) && dateStr > 40000) {
+        return excelDateToJSDate(dateStr);
+    }
+    // 兼容2014年 MM/DD/YY 格式（如1/3/14 → 2014-01-03）
+    const mmddyyReg = /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/;
+    if (mmddyyReg.test(dateStr)) {
+        const [, m, d, y] = dateStr.match(mmddyyReg);
+        const year = `20${y}`; // 固定为20xx年，匹配2014台账
+        const month = String(m).padStart(2, '0');
+        const day = String(d).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    // 常规日期格式化
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    return dateStr;
+}
 
-       // 页面加载时校验登录状态
-       function checkLogin() {
-           const isLogined = localStorage.getItem(LOGIN_KEY) === 'logined';
-           if (isLogined) {
-               document.getElementById('loginPage').style.display = 'none';
-               document.getElementById('mainApp').style.display = 'block';
-               return true;
-           }
-           document.getElementById('loginPage').style.display = 'flex';
-           document.getElementById('mainApp').style.display = 'none';
-           return false;
-       }
+// ========== 合同数据核心操作函数 ==========
+// 保存合同数据到浏览器本地（永久存储，刷新/关闭浏览器不丢失）
+function saveContractData(year, data) {
+    const key = `contractData_${year}`;
+    localStorage.setItem(key, JSON.stringify(data));
+}
 
-       // Excel日期序列号转标准YYYY-MM-DD格式（解决Excel日期变成数字的问题）
-       function excelDateToJSDate(serial) {
-           if (!serial || isNaN(serial)) return serial;
-           const utcDays = Math.floor(serial - 25569);
-           const utcValue = utcDays * 86400 * 1000;
-           const dateInfo = new Date(utcValue);
-           const year = dateInfo.getFullYear();
-           const month = String(dateInfo.getMonth() + 1).padStart(2, '0');
-           const day = String(dateInfo.getDate()).padStart(2, '0');
-           return `${year}-${month}-${day}`;
-       }
-        
-       // 通用日期格式化，兼容所有日期格式
-       function formatDate(dateStr) {
-           if (!dateStr) return '';
-           // 处理Excel日期序列号
-           if (!isNaN(dateStr) && dateStr > 40000) {
-               return excelDateToJSDate(dateStr);
-           }
-           // 兼容2014年 MM/DD/YY 格式（如1/3/14 → 2014-01-03）
-           const mmddyyReg = /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/;
-           if (mmddyyReg.test(dateStr)) {
-               const [, m, d, y] = dateStr.match(mmddyyReg);
-               const year = `20${y}`; // 固定为20xx年，匹配2014台账
-               const month = String(m).padStart(2, '0');
-               const day = String(d).padStart(2, '0');
-               return `${year}-${month}-${day}`;
-           }
-           // 常规日期格式化
-           const date = new Date(dateStr);
-           if (!isNaN(date.getTime())) {
-               const year = date.getFullYear();
-               const month = String(date.getMonth() + 1).padStart(2, '0');
-               const day = String(date.getDate()).padStart(2, '0');
-               return `${year}-${month}-${day}`;
-           }
-           return dateStr;
-       } 
+// 从本地读取已保存的合同数据
+function getContractData(year) {
+    const key = `contractData_${year}`;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+}
 
-       // 保存合同数据到浏览器本地（永久存储，刷新/关闭浏览器不丢失）
-       function saveContractData(year, data) {
-           const key = `contractData_${year}`;
-           localStorage.setItem(key, JSON.stringify(data));
-       }
-        
-       // 从本地读取已保存的合同数据
-       function getContractData(year) {
-           const key = `contractData_${year}`;
-           const data = localStorage.getItem(key);
-           return data ? JSON.parse(data) : [];
-       }
-        
-       // 把数据渲染到页面表格
-       function renderContractTable(year, data) {
-           const table = document.getElementById(`contractList-${year}`);
-           if (!table) return;
-           const tbody = table.querySelector('tbody');
-           tbody.innerHTML = '';
-           
-           // 无数据提示
-           if (!data || data.length === 0) {
-               const emptyTr = document.createElement('tr');
-               const emptyTd = document.createElement('td');
-               const headerCount = table.querySelectorAll('thead th').length; // 动态获取
-               emptyTd.colSpan = headerCount || 1;
-               emptyTd.textContent = '暂无合同数据，请导入Excel';
-               emptyTd.style.textAlign = 'center';
-               emptyTd.style.color = '#656d76';
-               emptyTr.appendChild(emptyTd);
-               tbody.appendChild(emptyTr);
-               return;
-           }          
-           // 渲染数据到表格
-           data.forEach(row => {
-               const tr = document.createElement('tr');
-               row.forEach(cellValue => {
-                   const td = document.createElement('td');
-                   td.textContent = cellValue || '';
-                   tr.appendChild(td);
-               });
-               tbody.appendChild(tr);
-           });
-       }
+// 把数据渲染到页面表格
+function renderContractTable(year, data) {
+    const table = document.getElementById(`contractList-${year}`);
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+tbody.innerHTML = '';
+ // 无数据提示
+    if (!data || data.length === 0) {
+        const emptyTr = document.createElement('tr');
+        const emptyTd = document.createElement('td');
+        const headerCount = table.querySelectorAll('thead th').length; // 动态获取
+        emptyTd.colSpan = headerCount || 1;
+        emptyTd.textContent = '暂无合同数据，请导入Excel';
+        emptyTd.style.textAlign = 'center';
+        emptyTd.style.color = '#656d76';
+        emptyTr.appendChild(emptyTd);
+        tbody.appendChild(emptyTr);
+        return;
+    }          
+    // 渲染数据到表格
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        row.forEach(cellValue => {
+            const td = document.createElement('td');
+            td.textContent = cellValue || '';
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+}
 
-       // 更新筛选下拉框选项（基于当前表格的列标题）
-       function updateSearchOptions() {
-           const activePanel = document.querySelector('.year-panel.active');
-           if (!activePanel) return;
-           const table = activePanel.querySelector('table');
-           if (!table) return;
-       
-           const headerCells = table.querySelectorAll('thead th');
-           const select = document.getElementById('yearlySearchType');
-           select.innerHTML = ''; // 清空原有选项
-       
-           // 添加“全字段模糊查询”选项
-           const allOption = document.createElement('option');
-           allOption.value = 'all';
-           allOption.textContent = '全字段模糊查询';
-           select.appendChild(allOption);
-       
-           // 为每个列标题添加选项
-           headerCells.forEach((th, index) => {
-               const headerText = th.textContent.trim();
-               if (headerText) {
-                   const option = document.createElement('option');
-                   option.value = `col_${index}`; // 使用 col_索引 作为值
-                   option.textContent = headerText;
-                   select.appendChild(option);
-               }
-           });
-       }
+// 更新筛选下拉框选项（基于当前表格的列标题）
+function updateSearchOptions() {
+    const activePanel = document.querySelector('.year-panel.active');
+    if (!activePanel) return;
+    const table = activePanel.querySelector('table');
+    if (!table) return;
 
-       // 模糊查询函数（挂载到 window 供 onclick 调用）
-       window.yearlyContractSearch = function() {
-           const searchType = document.getElementById('yearlySearchType').value;
-           const keyword = document.getElementById('yearlySearchInput').value.trim().toLowerCase();
-           if (!keyword) {
-               alert('请输入查询关键词');
-               return;
-           }
-       
-           const activePanel = document.querySelector('.year-panel.active');
-           if (!activePanel) return;
-           const year = activePanel.id.replace('panel-', ''); // 新增：获取当前年度
-           const table = activePanel.querySelector('table');
-           if (!table) return;
-       
-           const headerCells = table.querySelectorAll('thead th');
-           const rows = table.querySelectorAll('tbody tr');
-           let found = false;
-           const filteredRows = []; // 新增：存储筛选后的行数据
-       
-           if (searchType === 'all') {
-               rows.forEach(row => {
-                   const cells = row.querySelectorAll('td');
-                   let allText = '';
-                   cells.forEach(cell => allText += cell.textContent.toLowerCase() + ' ');
-                   const isMatch = allText.includes(keyword);
-                   row.style.backgroundColor = isMatch ? '#fff8c5' : '';
-                   if (isMatch) {
-                       // 新增：提取匹配行的单元格数据
-                       const rowData = Array.from(cells).map(cell => cell.textContent);
-                       filteredRows.push(rowData);
-                       row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                       found = true;
-                   }
-               });
-           } else {
-               const colIndex = parseInt(searchType.replace('col_', ''), 10);
-               if (isNaN(colIndex) || colIndex < 0 || colIndex >= headerCells.length) {
-                   alert('无效的列选择');
-                   return;
-               }
-       
-               rows.forEach(row => {
-                   const cells = row.querySelectorAll('td');
-                   if (cells.length > colIndex) {
-                       const cellText = cells[colIndex].textContent.toLowerCase();
-                       const isMatch = cellText.includes(keyword);
-                       row.style.backgroundColor = isMatch ? '#fff8c5' : '';
-                       if (isMatch) {
-                           // 新增：提取匹配行的单元格数据
-                           const rowData = Array.from(cells).map(cell => cell.textContent);
-                           filteredRows.push(rowData);
-                           row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                           found = true;
-                       }
-                   } else {
-                       row.style.backgroundColor = '';
-                   }
-               });
-           }
-       
-           // 新增：将筛选结果存入全局变量，覆盖当前年度的筛选结果
-           window.filteredContractData[year] = filteredRows;
-       
-           if (!found) {
-               alert('未找到匹配的合同数据');
-               window.filteredContractData[year] = []; // 无结果则置空
-           }
-       };
-       
-       window.clearYearlySearch = function() {
-           document.getElementById('yearlySearchInput').value = '';
-           document.getElementById('yearlySearchType').value = 'all';
-           const activePanel = document.querySelector('.year-panel.active');
-           const year = activePanel ? activePanel.id.replace('panel-', '') : '';
-           // 新增：清除当前年度的筛选临时结果
-           if (year) window.filteredContractData[year] = null;
-           // 原有清空高亮逻辑
-           document.querySelectorAll('.year-panel tbody tr').forEach(row => {
-               row.style.backgroundColor = '';
-           });
-       };
+    const headerCells = table.querySelectorAll('thead th');
+    const select = document.getElementById('yearlySearchType');
+    select.innerHTML = ''; // 清空原有选项
+
+    // 添加“全字段模糊查询”选项
+    const allOption = document.createElement('option');
+    allOption.value = 'all';
+    allOption.textContent = '全字段模糊查询';
+    select.appendChild(allOption);
+
+    // 为每个列标题添加选项
+    headerCells.forEach((th, index) => {
+        const headerText = th.textContent.trim();
+        if (headerText) {
+            const option = document.createElement('option');
+            option.value = `col_${index}`; // 使用 col_索引 作为值
+            option.textContent = headerText;
+            select.appendChild(option);
+        }
+    });
+}
+// ========== 年度合同模糊查询功能（全挂载到window） ==========
+// 模糊查询函数
+window.yearlyContractSearch = function() {
+    const searchType = document.getElementById('yearlySearchType').value;
+    const keyword = document.getElementById('yearlySearchInput').value.trim().toLowerCase();
+    if (!keyword) {
+        alert('请输入查询关键词');
+        return;
+    }
+
+    const activePanel = document.querySelector('.year-panel.active');
+    if (!activePanel) return;
+    const year = activePanel.id.replace('panel-', ''); // 获取当前年度
+    const table = activePanel.querySelector('table');
+    if (!table) return;
+
+    const headerCells = table.querySelectorAll('thead th');
+    const rows = table.querySelectorAll('tbody tr');
+    let found = false;
+    const filteredRows = []; // 存储筛选后的行数据
+
+    if (searchType === 'all') {
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            let allText = '';
+            cells.forEach(cell => allText += cell.textContent.toLowerCase() + ' ');
+            const isMatch = allText.includes(keyword);
+            row.style.backgroundColor = isMatch ? '#fff8c5' : '';
+            if (isMatch) {
+                // 提取匹配行的单元格数据
+                const rowData = Array.from(cells).map(cell => cell.textContent);
+                filteredRows.push(rowData);
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                found = true;
+            }
+        });
+    } else {
+        const colIndex = parseInt(searchType.replace('col_', ''), 10);
+        if (isNaN(colIndex) || colIndex < 0 || colIndex >= headerCells.length) {
+            alert('无效的列选择');
+            return;
+        }
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length > colIndex) {
+                const cellText = cells[colIndex].textContent.toLowerCase();
+                const isMatch = cellText.includes(keyword);
+                row.style.backgroundColor = isMatch ? '#fff8c5' : '';
+                if (isMatch) {
+                    // 提取匹配行的单元格数据
+                    const rowData = Array.from(cells).map(cell => cell.textContent);
+                    filteredRows.push(rowData);
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    found = true;
+                }
+            } else {
+                row.style.backgroundColor = '';
+            }
+        });
+    }
+
+    // 将筛选结果存入全局变量，覆盖当前年度的筛选结果
+    window.filteredContractData[year] = filteredRows;
+
+    if (!found) {
+        alert('未找到匹配的合同数据');
+        window.filteredContractData[year] = []; // 无结果则置空
+    }
+};
+
+// 清空筛选函数
+window.clearYearlySearch = function() {
+    document.getElementById('yearlySearchInput').value = '';
+    document.getElementById('yearlySearchType').value = 'all';
+    const activePanel = document.querySelector('.year-panel.active');
+    const year = activePanel ? activePanel.id.replace('panel-', '') : '';
+    // 清除当前年度的筛选临时结果
+    if (year) window.filteredContractData[year] = null;
+    // 清空高亮
+    document.querySelectorAll('.year-panel tbody tr').forEach(row => {
+        row.style.backgroundColor = '';
+    });
+};
 
        // 导入Excel函数
        window.importExcel = function() {

@@ -1671,39 +1671,37 @@ if (!data || data.length === 0) {
        };
  
        // 导入Excel函数
-       window.importExcel = function() {
-           const activePanel = document.querySelector('.year-panel.active');
-           if (!activePanel) return;
-           const year = activePanel.id.replace('panel-', '');
-           const table = activePanel.querySelector('table');
-           if (!table) {
-               alert(`${year}年面板暂无表格容器，请先完善页面结构后再导入`);
-               return;
-           }
-           
-           // 分年度表头映射规则
-       const yearHeaderConfig = {
-"2014": [
-    "序号",
-    "合同审批号",
-    "合同名称",
-    "是否归档",
-    "应归档份数",
-    "已归档份数",
-    "签订时间",
-    "经办人",
-    "合同金额-合同总金额",
-    "合同金额-每月费用",
-    "合同金额-其他",
-    "合同期限-起始",
-    "合同期限-结束",
-    "合同乙方",  // 无空格
-    "收费单位",  // 无空格
-    "合同履行",
-    "违约情况",
-    "合同是否到期",
-    "备注"
-],
+      window.importExcel = function() {
+    try {
+        // 检查依赖库
+        if (typeof XLSX === 'undefined') {
+            alert('错误：XLSX库未加载，请刷新页面或检查网络。');
+            return;
+        }
+        if (typeof saveAs === 'undefined') {
+            alert('错误：FileSaver库未加载，导出功能可能受限，但不影响导入。');
+        }
+
+        const activePanel = document.querySelector('.year-panel.active');
+        if (!activePanel) {
+            alert('未找到当前激活的年度面板，请先点击一个年份标签（如“2014年”）。');
+            return;
+        }
+        const year = activePanel.id.replace('panel-', '');
+        const table = activePanel.querySelector('table');
+        if (!table) {
+            alert(`${year}年面板缺少表格容器，请检查页面结构。`);
+            return;
+        }
+
+        // 分年度表头映射规则（务必包含所有年份，此处仅列出2014作为示例，请将其他年份补充完整）
+        const yearHeaderConfig = {
+            "2014": [
+                "序号", "合同审批号", "合同名称", "是否归档", "应归档份数", "已归档份数",
+                "签订时间", "经办人", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
+                "合同期限-起始", "合同期限-结束", "合同乙方", "收费单位", "合同履行", "违约情况",
+                "合同是否到期", "备注"
+            ],
     "2015": [
         "序号", "合同编号", "合同名称", "客方/收费单位",
         "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
@@ -1783,97 +1781,100 @@ if (!data || data.length === 0) {
         "原因", "到期提醒", "当月考核数量", "备注"
     ]
 };
-           // 当前年度标准表头
-           const targetHeaders = yearHeaderConfig[year] || yearHeaderConfig["2014"];
-           // 需要自动格式化的日期字段
-         const dateFields = [
-    "申请时间", "分发日期", "签订时间", "归档日期",
-    "合同期限-起始", "合同期限-结束", "合同期限（起始）", "合同期限（结束）", "签订日期","签订时间", "归档日期", "起始", "结束", "合同履行时间", "合同履行"
-];           
-           const fileInput = document.createElement('input');
-           fileInput.type = 'file';
-           fileInput.accept = '.xls, .xlsx';
-           fileInput.onchange = function(e) {
-               const file = e.target.files[0];
-               const reader = new FileReader();
-               reader.onload = function(loadEvent) {
-                   const data = new Uint8Array(loadEvent.target.result);
-                   const workbook = XLSX.read(data, { type: 'array' });
-                   const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                   const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 'A' });
-const filterRows = rows.filter(row => {
-    const rowStr = JSON.stringify(row).toLowerCase();
-    return !rowStr.includes('我司未走流程') && !rowStr.includes('序号|合同审批号') && row.some(cell => cell);
-});
-                  if (rows.length < 2) {
-    alert('Excel 文件至少需要标题行和数据行');
-    return;
-}
+              // 当前年度标准表头
+        const targetHeaders = yearHeaderConfig[year] || yearHeaderConfig["2014"];
+        const dateFields = [
+            "申请时间", "分发日期", "签订时间", "归档日期",
+            "合同期限-起始", "合同期限-结束", "合同期限（起始）", "合同期限（结束）",
+            "签订日期", "签订时间", "归档日期", "起始", "结束", "合同履行时间", "合同履行"
+        ];
 
-// 提取标题行
-const excelHeaderRow = rows[0];
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.xls, .xlsx';
+        fileInput.onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) {
+                alert('未选择文件');
+                return;
+            }
 
-// 过滤有效数据行（跳过标题行，并过滤掉包含无效文本的行）
-const dataRows = rows.slice(1).filter(row => {
-    const rowStr = JSON.stringify(row).toLowerCase();
-    // 排除包含“我司未走流程”或“序号|合同审批号”的行，且至少有一个非空单元格
-    return !rowStr.includes('我司未走流程') && 
-           !rowStr.includes('序号|合同审批号') && 
-           Object.values(row).some(cell => cell !== undefined && cell !== null && cell !== '');
-});
+            const reader = new FileReader();
+            reader.onload = function(loadEvent) {
+                try {
+                    const data = new Uint8Array(loadEvent.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 'A' });
 
-if (dataRows.length === 0) {
-    alert('没有有效的数据行可导入');
-    return;
-}
+                    // 过滤有效行
+                    const dataRows = rows.slice(1).filter(row => {
+                        const rowStr = JSON.stringify(row).toLowerCase();
+                        return !rowStr.includes('我司未走流程') &&
+                               !rowStr.includes('序号|合同审批号') &&
+                               Object.values(row).some(cell => cell !== undefined && cell !== null && cell !== '');
+                    });
 
-// 建立Excel表头和列的映射
-const excelHeaderMap = {};
-Object.keys(excelHeaderRow).forEach(colKey => {
-    const headerName = excelHeaderRow[colKey]?.toString().trim() || '';
-    if (headerName) excelHeaderMap[headerName] = colKey;
-});                   
-                   const tbody = table.querySelector('tbody');
-                   tbody.innerHTML = '';
-                   let successCount = 0;
-                   const newContractData = []; // 用于永久保存的新数据
-                   
-                   // 遍历导入数据
-                   for (let i = 0; i < dataRows.length; i++) {
-const rowData = dataRows[i];
-                       const tr = document.createElement('tr');
-                       const rowArr = [];
-                       targetHeaders.forEach((header) => {
-                           const td = document.createElement('td');
-                           const excelColKey = excelHeaderMap[header];
-                           let cellValue = excelColKey && rowData[excelColKey] !== undefined
-                               ? rowData[excelColKey]
-                               : '';
-                           
-                           // 日期字段自动格式化
-                           if (dateFields.includes(header.trim())) {
-                               cellValue = formatDate(cellValue);
-                           }
-                           
-                           td.textContent = cellValue;
-                           tr.appendChild(td);
-                           rowArr.push(cellValue);
-                       });
-                       tbody.appendChild(tr);
-                       newContractData.push(rowArr);
-                       successCount++;
-                   }
-                   
-                   // 永久保存数据，覆盖原有合同数据
-                   saveContractData(year, newContractData);
-renderContractTable(year, newContractData);
-                   alert(`已导入 ${successCount} 条合同到 ${year} 年，日期已自动格式化，数据已永久保存！`);
-               };
-               reader.readAsArrayBuffer(file);
-           };
-           fileInput.click();
-       };
- 
+                    if (dataRows.length === 0) {
+                        alert('Excel中没有有效的数据行可导入');
+                        return;
+                    }
+
+                    // 构建Excel表头映射（列名 -> 列字母）
+                    const excelHeaderRow = rows[0];
+                    const excelHeaderMap = {};
+                    Object.keys(excelHeaderRow).forEach(colKey => {
+                        const headerName = excelHeaderRow[colKey]?.toString().trim() || '';
+                        if (headerName) excelHeaderMap[headerName] = colKey;
+                    });
+
+                    const tbody = table.querySelector('tbody');
+                    tbody.innerHTML = '';
+                    const newContractData = [];
+
+                    for (let i = 0; i < dataRows.length; i++) {
+                        const rowData = dataRows[i];
+                        const tr = document.createElement('tr');
+                        const rowArr = [];
+                        targetHeaders.forEach((header) => {
+                            const td = document.createElement('td');
+                            const excelColKey = excelHeaderMap[header];
+                            let cellValue = excelColKey && rowData[excelColKey] !== undefined
+                                ? rowData[excelColKey]
+                                : '';
+
+                            // 日期字段自动格式化
+                            if (dateFields.includes(header.trim())) {
+                                cellValue = formatDate(cellValue);
+                            }
+
+                            td.textContent = cellValue;
+                            tr.appendChild(td);
+                            rowArr.push(cellValue);
+                        });
+                        tbody.appendChild(tr);
+                        newContractData.push(rowArr);
+                    }
+
+                    // 保存数据到本地存储
+                    saveContractData(year, newContractData);
+                    alert(`成功导入 ${newContractData.length} 条合同到 ${year} 年！`);
+                } catch (err) {
+                    alert('解析Excel时出错：' + err.message);
+                    console.error(err);
+                }
+            };
+            reader.onerror = function() {
+                alert('读取文件失败');
+            };
+            reader.readAsArrayBuffer(file);
+        };
+        fileInput.click();
+    } catch (err) {
+        alert('导入过程发生错误：' + err.message);
+        console.error(err);
+    }
+};
        // 导出Excel函数
        window.exportExcel = function() {
            const activePanel = document.querySelector('.year-panel.active');

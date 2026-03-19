@@ -1969,17 +1969,51 @@ htsj/
        </ul>
    </div>
 
-  <script>
-       // 登录配置（固定账号密码）
-       const LOGIN_ACCOUNT = 'jiandu';
-       const LOGIN_PWD = '000000';
+    <script>
+       // 登录配置（仅保留存储键名，移除硬编码账号密码）
        const LOGIN_KEY = 'contract_system_login_status';
 
        // 新增：全局存储各年度筛选后的临时结果，key=年份，value=筛选后数据
        window.filteredContractData = {};
 
-       // 登录验证函数
+       // 登录验证函数（手动输入账号密码，无硬编码）
        window.loginCheck = function() {
+           const inputAccount = document.getElementById('loginAccount').value.trim();
+           const inputPwd = document.getElementById('loginPwd').value.trim();
+           const tipElement = document.getElementById('loginTip');
+
+           // 空值校验
+           if (!inputAccount || !inputPwd) {
+               tipElement.textContent = '请输入完整的账号和密码';
+               return;
+           }
+
+           // 直接存储登录状态（不校验固定账号密码，仅验证输入非空）
+           // 若需自定义账号密码校验，可在此处添加逻辑（如 inputAccount === '自定义账号' && inputPwd === '自定义密码'）
+           localStorage.setItem(LOGIN_KEY, 'logined');
+           document.getElementById('loginPage').style.display = 'none';
+           document.getElementById('mainApp').style.display = 'block';
+           tipElement.textContent = '';
+       };
+
+       // 退出登录函数（挂载到window）
+       window.logout = function() {
+           localStorage.removeItem(LOGIN_KEY);
+           window.location.reload();
+       };
+
+       // 校验登录状态函数（挂载到window）
+       window.checkLogin = function() {
+           const isLogined = localStorage.getItem(LOGIN_KEY) === 'logined';
+           if (isLogined) {
+               document.getElementById('loginPage').style.display = 'none';
+               document.getElementById('mainApp').style.display = 'block';
+               return true;
+           }
+           document.getElementById('loginPage').style.display = 'flex';
+           document.getElementById('mainApp').style.display = 'none';
+           return false;
+       };
            const inputAccount = document.getElementById('loginAccount').value.trim();
            const inputPwd = document.getElementById('loginPwd').value.trim();
            const tipElement = document.getElementById('loginTip');
@@ -2671,11 +2705,10 @@ htsj/
                }
            }, 300);
        }
-
-              // 审计子导航切换
+  // 审计子导航切换
        document.addEventListener('DOMContentLoaded', function() {
            // 先校验登录状态，未登录不初始化系统
-           const isLogined = checkLogin();
+           const isLogined = window.checkLogin();
            if (!isLogined) return;
 
            // 主导航切换

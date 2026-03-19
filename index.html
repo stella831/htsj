@@ -1487,7 +1487,34 @@
            </div>
         
    <!-- 其他页面占位符（根据实际需要添加） -->
-   <div class="page" id="page-quickstart">快速开始页面内容</div>
+   <div class="page" id="page-quickstart">
+    <h2 class="page-title">快速开始 - 全局合同筛选</h2>
+    <div class="search-box">
+        <input type="text" class="search-input" id="quickSearchInput" placeholder="输入关键词（如：续签、保洁、2024）...">
+        <button class="btn btn-primary" onclick="quickSearch()">筛选</button>
+        <button class="btn btn-default" onclick="clearQuickSearch()">清空</button>
+    </div>
+    <div class="table-wrapper">
+        <table id="quickResultTable">
+            <thead>
+                <tr>
+                    <th>年份</th>
+                    <th>合同编号</th>
+                    <th>合同名称</th>
+                    <th>签订时间</th>
+                    <th>经办人/部门</th>
+                    <th>合同金额</th>
+                    <th>合同乙方</th>
+                    <th>是否归档</th>
+                    <th>备注/类型</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="9" style="text-align:center; color:#656d76;">请输入关键词开始筛选</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
    <div class="page" id="page-audit">审计比对功能页面</div>
    <div class="page" id="page-structure">目录结构页面</div>
    <div class="page" id="page-usage">使用说明页面</div>
@@ -2108,6 +2135,77 @@ if (!data || data.length === 0) {
                updateSearchOptions();
            }
        });
+// 快速开始页面：全局筛选（按关键词模糊搜索所有年度）
+window.quickSearch = function() {
+    const keyword = document.getElementById('quickSearchInput').value.trim().toLowerCase();
+    if (!keyword) {
+        alert('请输入关键词');
+        return;
+    }
+
+    const tbody = document.querySelector('#quickResultTable tbody');
+    tbody.innerHTML = ''; // 清空旧结果
+
+    // 定义所有年份（2014-2026）
+    const years = ['2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025','2026'];
+    let resultCount = 0;
+
+    years.forEach(year => {
+        const contracts = getContractData(year); // 从 localStorage 读取该年数据
+        if (!contracts || contracts.length === 0) return;
+
+        // 获取该年度的表头（用于字段映射）—— 确保 yearHeaderConfig 是全局可访问的
+        const headers = yearHeaderConfig[year] || yearHeaderConfig['2014'];
+
+        contracts.forEach(row => {
+            // 将行数据转换为对象，方便按字段名访问
+            const rowObj = {};
+            headers.forEach((header, idx) => {
+                rowObj[header] = row[idx] || '';
+            });
+
+            // 构建用于搜索的字符串（包含可能的关键字段）
+            const searchText = [
+                rowObj['合同名称'] || '',
+                rowObj['合同编号'] || '',
+                rowObj['合同审批号'] || '',
+                rowObj['合同类型'] || '',
+                rowObj['备注'] || '',
+                rowObj['合同乙方'] || '',
+                rowObj['客方/收费单位'] || ''
+            ].join(' ').toLowerCase();
+
+            if (searchText.includes(keyword)) {
+                // 匹配成功，添加一行到结果表
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${year}</td>
+                    <td>${rowObj['合同编号'] || rowObj['合同审批号'] || ''}</td>
+                    <td>${rowObj['合同名称'] || ''}</td>
+                    <td>${rowObj['签订时间'] || ''}</td>
+                    <td>${rowObj['经办人'] || rowObj['经办部门'] || ''}</td>
+                    <td>${rowObj['合同金额-合同总金额'] || rowObj['合同金额'] || ''}</td>
+                    <td>${rowObj['合同乙方'] || rowObj['客方/收费单位'] || ''}</td>
+                    <td>${rowObj['是否归档'] || ''}</td>
+                    <td>${rowObj['合同类型'] || rowObj['备注'] || ''}</td>
+                `;
+                tbody.appendChild(tr);
+                resultCount++;
+            }
+        });
+    });
+
+    if (resultCount === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#656d76;">未找到匹配的合同</td></tr>';
+    }
+};
+
+// 清空筛选结果
+window.clearQuickSearch = function() {
+    document.getElementById('quickSearchInput').value = '';
+    const tbody = document.querySelector('#quickResultTable tbody');
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#656d76;">请输入关键词开始筛选</td></tr>';
+};
    </script>
 </body>
 </html>

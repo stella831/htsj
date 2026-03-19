@@ -1591,7 +1591,7 @@
                            </tr>
                        </thead>
                        <tbody>
-                           <tr><td colspan="26" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
+                           <tr><td colspan="25" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
                        </tbody>
                    </table>
                </div>
@@ -1970,10 +1970,7 @@ htsj/
    </div>
 
     <script>
-       // 登录配置（仅保留存储键名，移除硬编码账号密码）
-       const LOGIN_KEY = 'contract_system_login_status';
-
-       // 新增：全局存储各年度筛选后的临时结果，key=年份，value=筛选后数据
+            // 新增：全局存储各年度筛选后的临时结果，key=年份，value=筛选后数据
        window.filteredContractData = {};
 // ========== 常量定义（统一放在最前面） ==========
 const LOGIN_ACCOUNT = 'jiandu';
@@ -2570,7 +2567,7 @@ window.clearYearlySearch = function() {
 
            years.forEach(year => {
                // 核心修改：优先取年度筛选后的结果，无则取原始全量数据
-               let contracts = window.filteredContractData[year] || getContractData(year);
+               let contracts = getContractData(year);
                if (!contracts || contracts.length === 0) return;
 
                contracts.forEach((row, rowIndex) => {
@@ -2801,7 +2798,7 @@ window.clearYearlySearch = function() {
 
        // 导出合规核查报告
        function exportComplianceReport() {
-           const result = document.getElementById('complianceResult').value;
+           const result = document.getElementById('complianceResult').innerText;
            if (!result || result.includes('请选择核查项')) {
                alert('暂无核查报告可导出');
                return;

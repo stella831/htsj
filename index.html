@@ -1786,11 +1786,10 @@ if (!data || data.length === 0) {
            // 当前年度标准表头
            const targetHeaders = yearHeaderConfig[year] || yearHeaderConfig["2014"];
            // 需要自动格式化的日期字段
-           const dateFields = [
-               "申请时间", "分发日期", "签订时间", "归档日期",
-               "合同期限-起始", "合同期限-结束", "合同期限（起始）", "合同期限（结束）", "签订日期","签订时间", "归档日期", "起始", "结束", "合同履行时间"
-           ];
-           
+         const dateFields = [
+    "申请时间", "分发日期", "签订时间", "归档日期",
+    "合同期限-起始", "合同期限-结束", "合同期限（起始）", "合同期限（结束）", "签订日期","签订时间", "归档日期", "起始", "结束", "合同履行时间", "合同履行"
+];           
            const fileInput = document.createElement('input');
            fileInput.type = 'file';
            fileInput.accept = '.xls, .xlsx';
@@ -1806,27 +1805,42 @@ const filterRows = rows.filter(row => {
     const rowStr = JSON.stringify(row).toLowerCase();
     return !rowStr.includes('我司未走流程') && !rowStr.includes('序号|合同审批号') && row.some(cell => cell);
 });
-                   if (rows.length < 2) {
-                       alert('Excel 文件至少需要标题行和数据行');
-                       return;
-                   }
-                   
-                   // 建立Excel表头和列的映射
-                   const excelHeaderRow = rows[0];
-                   const excelHeaderMap = {};
-                   Object.keys(excelHeaderRow).forEach(colKey => {
-                       const headerName = excelHeaderRow[colKey]?.toString().trim() || '';
-                       if (headerName) excelHeaderMap[headerName] = colKey;
-                   });
-                   
+                  if (rows.length < 2) {
+    alert('Excel 文件至少需要标题行和数据行');
+    return;
+}
+
+// 提取标题行
+const excelHeaderRow = rows[0];
+
+// 过滤有效数据行（跳过标题行，并过滤掉包含无效文本的行）
+const dataRows = rows.slice(1).filter(row => {
+    const rowStr = JSON.stringify(row).toLowerCase();
+    // 排除包含“我司未走流程”或“序号|合同审批号”的行，且至少有一个非空单元格
+    return !rowStr.includes('我司未走流程') && 
+           !rowStr.includes('序号|合同审批号') && 
+           Object.values(row).some(cell => cell !== undefined && cell !== null && cell !== '');
+});
+
+if (dataRows.length === 0) {
+    alert('没有有效的数据行可导入');
+    return;
+}
+
+// 建立Excel表头和列的映射
+const excelHeaderMap = {};
+Object.keys(excelHeaderRow).forEach(colKey => {
+    const headerName = excelHeaderRow[colKey]?.toString().trim() || '';
+    if (headerName) excelHeaderMap[headerName] = colKey;
+});                   
                    const tbody = table.querySelector('tbody');
                    tbody.innerHTML = '';
                    let successCount = 0;
                    const newContractData = []; // 用于永久保存的新数据
                    
                    // 遍历导入数据
-                   for (let i = 1; i < rows.length; i++) {
-                       const rowData = rows[i];
+                   for (let i = 0; i < dataRows.length; i++) {
+const rowData = dataRows[i];
                        const tr = document.createElement('tr');
                        const rowArr = [];
                        targetHeaders.forEach((header) => {

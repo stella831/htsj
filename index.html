@@ -1975,15 +1975,11 @@ htsj/
 
        // 新增：全局存储各年度筛选后的临时结果，key=年份，value=筛选后数据
        window.filteredContractData = {};
-// ========== 常量定义（统一管理，放在最开头） ==========
-// 固定登录账号密码
+// ========== 常量定义（统一放在最前面） ==========
 const LOGIN_ACCOUNT = 'jiandu';
 const LOGIN_PWD = '000000';
-// 登录状态存储key
 const LOGIN_KEY = 'contract_system_login_status';
-// 全局存储各年度筛选后的临时结果，key=年份，value=筛选后数据
 window.filteredContractData = {};
-
 // ========== 登录核心功能（仅保留1份，全挂载到window，无重复） ==========
 // 登录验证函数（固定账号jiandu/000000校验）
 window.loginCheck = function() {

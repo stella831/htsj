@@ -563,25 +563,123 @@
                padding: 8px 10px;
                font-size: 0.85rem;
            }
+             }
+
+       /* 登录页面样式 */
+       .login-page {
+           width: 100vw;
+           height: 100vh;
+           position: fixed;
+           top: 0;
+           left: 0;
+           background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           z-index: 9999;
+       }
+       .login-box {
+           background: white;
+           padding: 40px 30px;
+           border-radius: 12px;
+           box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+           width: 100%;
+           max-width: 400px;
+       }
+       .login-box h2 {
+           text-align: center;
+           color: var(--github-text);
+           margin-bottom: 8px;
+           font-size: 1.5rem;
+       }
+       .login-desc {
+           text-align: center;
+           color: var(--github-light);
+           margin-bottom: 30px;
+           font-size: 0.95rem;
+       }
+       .login-input-group {
+           margin-bottom: 20px;
+           display: flex;
+           flex-direction: column;
+           gap: 8px;
+       }
+       .login-input-group label {
+           font-weight: 600;
+           color: var(--github-text);
+           font-size: 14px;
+       }
+       .login-input-group input {
+           width: 100%;
+           padding: 12px 15px;
+           border: 1px solid var(--github-border);
+           border-radius: 6px;
+           font-size: 14px;
+       }
+       .login-btn {
+           width: 100%;
+           padding: 12px;
+           background-color: var(--github-accent);
+           color: white;
+           border: none;
+           border-radius: 6px;
+           font-size: 16px;
+           font-weight: 600;
+           cursor: pointer;
+           transition: all 0.2s;
+           margin-bottom: 15px;
+       }
+       .login-btn:hover {
+           background-color: #0858b8;
+       }
+       .login-tip {
+           text-align: center;
+           font-size: 14px;
+           color: #cf222e;
+           margin: 0;
        }
    </style>
 </head>
 <body>
-   <div class="header">
-       <h1>兆翔物业多年度合同管理与审计比对系统（2014-2026）</h1>
-       <p>8000+份合同台账管理 | 合规核查 | 价格比对 | 风险管控 | 审计报告生成 | 底稿批量归档</p>
-       <div>
-           <span class="badge">Python 3.8+</span>
-           <span class="badge">Excel (.xls/.xlsx)</span>
-           <span class="badge">多年度适配</span>
-           <span class="badge">合规审计</span>
-           <span class="badge">跨年度统计</span>
-           <span class="badge">底稿归档</span>
-           <span class="badge">模糊查询</span>
-           <span class="badge">GitHub Pages</span>
+   <!-- 登录页面 -->
+   <div class="login-page" id="loginPage">
+       <div class="login-box">
+           <h2>兆翔物业合同审计系统</h2>
+           <p class="login-desc">请输入账号密码登录系统</p>
+           <div class="login-input-group">
+               <label>账号</label>
+               <input type="text" id="loginAccount" placeholder="请输入账号">
+           </div>
+           <div class="login-input-group">
+               <label>密码</label>
+               <input type="password" id="loginPwd" placeholder="请输入密码">
+           </div>
+           <button class="login-btn" onclick="loginCheck()">登录</button>
+           <p id="loginTip" class="login-tip"></p>
        </div>
    </div>
 
+   <!-- 系统主内容（默认隐藏，登录成功后显示） -->
+   <div id="mainApp" style="display: none;">
+       <div class="header">
+           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+               <div>
+                   <h1>兆翔物业多年度合同管理与审计比对系统（2014-2026）</h1>
+                   <p>8000+份合同台账管理 | 合规核查 | 价格比对 | 风险管控 | 审计报告生成 | 底稿批量归档</p>
+               </div>
+               <button class="btn btn-default" onclick="logout()">退出登录</button>
+           </div>
+           <div>
+               <span class="badge">Python 3.8+</span>
+               <span class="badge">Excel (.xls/.xlsx)</span>
+               <span class="badge">多年度适配</span>
+               <span class="badge">合规审计</span>
+               <span class="badge">跨年度统计</span>
+               <span class="badge">底稿归档</span>
+               <span class="badge">模糊查询</span>
+               <span class="badge">GitHub Pages</span>
+           </div>
+       </div>
    <!-- 主导航 -->
    <div class="main-nav">
        <div class="main-nav-item active" data-page="overview">项目总览</div>
@@ -1871,9 +1969,57 @@ htsj/
        </ul>
    </div>
 
-   <script>
+  <script>
+       // 登录配置（固定账号密码）
+       const LOGIN_ACCOUNT = 'jiandu';
+       const LOGIN_PWD = '000000';
+       const LOGIN_KEY = 'contract_system_login_status';
+
        // 新增：全局存储各年度筛选后的临时结果，key=年份，value=筛选后数据
        window.filteredContractData = {};
+
+       // 登录验证函数
+       window.loginCheck = function() {
+           const inputAccount = document.getElementById('loginAccount').value.trim();
+           const inputPwd = document.getElementById('loginPwd').value.trim();
+           const tipElement = document.getElementById('loginTip');
+
+           // 空值校验
+           if (!inputAccount || !inputPwd) {
+               tipElement.textContent = '请输入完整的账号和密码';
+               return;
+           }
+
+           // 账号密码校验
+           if (inputAccount === LOGIN_ACCOUNT && inputPwd === LOGIN_PWD) {
+               localStorage.setItem(LOGIN_KEY, 'logined');
+               // 隐藏登录页，显示主系统
+               document.getElementById('loginPage').style.display = 'none';
+               document.getElementById('mainApp').style.display = 'block';
+               tipElement.textContent = '';
+           } else {
+               tipElement.textContent = '账号或密码错误，请重新输入';
+           }
+       };
+
+       // 退出登录函数
+       window.logout = function() {
+           localStorage.removeItem(LOGIN_KEY);
+           window.location.reload();
+       };
+
+       // 页面加载时校验登录状态
+       function checkLogin() {
+           const isLogined = localStorage.getItem(LOGIN_KEY) === 'logined';
+           if (isLogined) {
+               document.getElementById('loginPage').style.display = 'none';
+               document.getElementById('mainApp').style.display = 'block';
+               return true;
+           }
+           document.getElementById('loginPage').style.display = 'flex';
+           document.getElementById('mainApp').style.display = 'none';
+           return false;
+       }
 
        // Excel日期序列号转标准YYYY-MM-DD格式（解决Excel日期变成数字的问题）
        function excelDateToJSDate(serial) {
@@ -2526,8 +2672,12 @@ htsj/
            }, 300);
        }
 
-       // 审计子导航切换
+              // 审计子导航切换
        document.addEventListener('DOMContentLoaded', function() {
+           // 先校验登录状态，未登录不初始化系统
+           const isLogined = checkLogin();
+           if (!isLogined) return;
+
            // 主导航切换
            document.querySelectorAll('.main-nav-item').forEach(item => {
                item.addEventListener('click', function() {
@@ -2719,7 +2869,7 @@ htsj/
        function clearArchiveFiles() {
            alert('文件列表已清空');
        }
-   </script>
-
+     </script>
+   </div>
 </body>
 </html>

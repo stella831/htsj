@@ -178,13 +178,23 @@
            color: var(--github-text);
            border: 1px solid var(--github-border);
        }
-       .btn-default:hover {
-           background-color: var(--github-hover);
-       }
-       .btn:disabled {
-           opacity: 0.6;
-           cursor: not-allowed;
-       }
+     .btn-default:hover {
+    background-color: var(--github-hover);
+}
+
+.btn-warning {
+    background-color: #d4a72c;
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: #bf9423;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
        .btn-sm {
            padding: 4px 8px;
            font-size: 12px;
@@ -781,11 +791,12 @@
            <button class="btn btn-primary" onclick="yearlyContractSearch()">查询</button>
            <button class="btn btn-default" onclick="clearYearlySearch()">清空</button>
        </div>
-       <div class="search-box" style="margin-top: 10px;">
-           <button class="btn btn-success" onclick="importExcel()">导入 Excel</button>
-           <button class="btn btn-primary" onclick="exportExcel()">导出 Excel</button>
-           <span style="color: var(--github-light); margin-left: 10px; font-size: 0.9rem;">（仅对当前年度有效）</span>
-       </div>
+      <div class="search-box" style="margin-top: 10px;">
+    <button class="btn btn-success" onclick="importExcel()">导入 Excel</button>
+    <button class="btn btn-primary" onclick="exportExcel()">导出全量 Excel</button>
+    <button class="btn btn-warning" onclick="exportFilteredExcel()" id="exportFilterBtn" disabled>导出筛选结果</button>
+    <span style="color: var(--github-light); margin-left: 10px; font-size: 0.9rem;">（仅对当前年度有效）</span>
+</div>
        <div class="year-tabs">
            <div class="year-tab active badge-2014" data-year="2014">2014年</div>
            <div class="year-tab badge-2015" data-year="2015">2015年</div>
@@ -1088,7 +1099,7 @@
                            </tr>
                        </thead>
                        <tbody>
-                           <tr><td colspan="18" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
+                           <tr><td colspan="19" style="text-align:center; color:#656d76;">暂无合同数据，请导入Excel</td></tr>
                        </tbody>
                    </table>
                </div>
@@ -1600,31 +1611,30 @@
    </div>
    <!-- 年度台账特征页面 闭合（关键修复：之前未闭合导致页面嵌套） -->
 
-   <!-- 3. 快速开始页面 -->
-
-   <div class="page" id="page-quickstart">
-       <h2 class="page-title">快速开始 - 全局合同筛选</h2>
-       <div class="search-box">
-           <input type="text" class="search-input" id="quickSearchInput" placeholder="输入关键词（如：续签、保洁、2024）...">
-           <button class="btn btn-primary" onclick="quickSearch()">筛选</button>
-           <button class="btn btn-default" onclick="clearQuickSearch()">清空</button>
-       </div>
-       <div class="table-wrapper">
-           <table id="quickResultTable">
-               <thead>
-                   <tr>
-                       <th>年份</th>
-                       <th>合同摘要</th>
-                       <th>操作</th>
-                   </tr>
-               </thead>
-               <tbody>
-                   <tr><td colspan="3" style="text-align:center; color:#656d76;">请输入关键词开始筛选</td></tr>
-               </tbody>
-           </table>
-       </div>
-   </div>
-
+  <!-- 3. 快速开始页面 -->
+<div class="page" id="page-quickstart">
+    <h2 class="page-title">快速开始 - 全局合同筛选</h2>
+    <div class="search-box">
+        <input type="text" class="search-input" id="quickSearchInput" placeholder="输入关键词（如：续签、保洁、2024）...">
+        <button class="btn btn-primary" onclick="quickSearch()">筛选</button>
+        <button class="btn btn-default" onclick="clearQuickSearch()">清空</button>
+        <button class="btn btn-warning" onclick="exportQuickSearchResult()" id="exportQuickBtn" disabled>导出全局筛选结果</button>
+    </div>
+    <div class="table-wrapper">
+        <table id="quickResultTable">
+            <thead>
+                <tr>
+                    <th>年份</th>
+                    <th>合同摘要</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="3" style="text-align:center; color:#656d76;">请输入关键词开始筛选</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
    <!-- 4. 审计比对功能页面 -->
 
    <div class="page" id="page-audit">
@@ -1970,17 +1980,35 @@ htsj/
    </div>
 
     <script>
-            // 新增：全局存储各年度筛选后的临时结果，key=年份，value=筛选后数据
-       window.filteredContractData = {};
+    // 新增：全局存储各年度筛选后的临时结果，key=年份，value=筛选后数据
+window.filteredContractData = {};
+// 新增：全局存储快速开始页面的全局筛选结果
+window.quickSearchResult = [];
+
 // ========== 常量定义（统一放在最前面） ==========
 const LOGIN_ACCOUNT = 'jiandu';
 const LOGIN_PWD = '000000';
 const LOGIN_KEY = 'contract_system_login_status';
-window.filteredContractData = {};
+
+// 全局唯一表头配置（所有导入导出统一引用，禁止重复定义）
+const yearHeaderConfig = {
+    "2014": ["序号", "合同审批号", "合同名称", "是否归档", "应归档份数", "已归档份数", "签订时间", "经办人", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "合同期限-起始", "合同期限-结束", "合同乙方", "收费单位", "合同履行", "违约情况", "合同是否到期", "备注"],
+    "2015": ["序号", "合同编号", "合同名称", "客方/收费单位", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "签订时间", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "归档备注"],
+    "2016": ["序号", "合同编号", "合同名称", "客方/收费单位", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "签订时间", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "归档备注"],
+    "2017": ["序号", "合同编号", "合同名称", "客方/收费单位", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "签订时间", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "归档备注"],
+    "2018": ["序号", "合同编号", "合同名称", "客方/收费单位", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "签订时间", "经办部门", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "归档备注"],
+    "2019": ["序号", "合同编号", "合同名称", "客方/收费单位", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "签订时间", "经办部门", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "到期提醒", "归档备注"],
+    "2020": ["合同编号", "合同名称", "客方/收费单位", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "签订时间", "经办部门", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "到期提醒", "归档备注"],
+    "2021": ["合同编号", "分发日期", "合同名称", "客方/收费单位", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "到期提醒", "归档备注"],
+    "2022": ["合同编号", "分发日期", "合同名称", "客方/收费单位", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "签订时间", "经办部门", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "是否及时归档（分发日起3个月内完成归档）", "到期提醒", "归档备注"],
+    "2023": ["合同编号", "分发日期", "合同名称", "客方/收费单位", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "是否及时归档（分发日起3个月内完成归档）", "到期提醒", "归档备注"],
+    "2024": ["合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他", "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "是否及时归档（分发日起3个月内完成归档）", "到期提醒", "归档备注", "当月考核数量"],
+    "2025": ["合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位", "合同金额", "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "是否及时归档（分发日起3个月内完成归档）", "合同签订日期是否早于审批日期（分发时间）", "签订异常原因", "合同履约时间是否早于审批日期（申请时间）", "履约异常原因", "到期提醒", "归档备注"],
+    "2026": ["合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位", "合同金额", "签订时间", "经办部门", "经办人", "负责部门", "合同类型", "合同备注", "份数", "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "是否及时归档（分发日起3个月内完成归档）", "合同签订日期是否早于审批日期（分发时间）", "签订异常原因", "合同履约时间是否早于审批日期（申请时间）", "履约异常原因", "到期提醒", "当月考核数量", "最终备注"]
+};
 // ========== 登录核心功能（仅保留1份，全挂载到window，无重复） ==========
 // 登录验证函数（固定账号jiandu/000000校验）
 window.loginCheck = function() {
-    // 安全获取DOM元素，判空防止报错
     const inputAccount = document.getElementById('loginAccount');
     const inputPwd = document.getElementById('loginPwd');
     const tipElement = document.getElementById('loginTip');
@@ -1988,31 +2016,23 @@ window.loginCheck = function() {
         alert('页面加载异常，请刷新页面重试');
         return;
     }
-
-    // 获取输入值
     const account = inputAccount.value.trim();
     const pwd = inputPwd.value.trim();
-
-    // 空值校验
     if (!account || !pwd) {
         tipElement.textContent = '请输入完整的账号和密码';
         return;
     }
-
-    // 账号密码正确性校验
     if (account === LOGIN_ACCOUNT && pwd === LOGIN_PWD) {
-        // 登录成功逻辑
         localStorage.setItem(LOGIN_KEY, 'logined');
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         tipElement.textContent = '';
+        initSystem(); // 登录成功后主动初始化系统
     } else {
-        // 登录失败逻辑
         tipElement.textContent = '账号或密码错误，请重新输入';
-        inputPwd.value = ''; // 清空密码框，提升体验
+        inputPwd.value = '';
     }
 };
-
 // 退出登录函数（挂载到window）
 window.logout = function() {
     localStorage.removeItem(LOGIN_KEY);
@@ -2070,6 +2090,24 @@ function formatDate(dateStr) {
         return `${year}-${month}-${day}`;
     }
     return dateStr;
+}
+
+// HTML特殊字符转义，防止XSS攻击
+function htmlEscape(text) {
+    return text.replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;')
+               .replace(/"/g, '&quot;')
+               .replace(/'/g, '&#039;');
+}
+
+// HTML特殊字符转义，防止XSS攻击
+function htmlEscape(text) {
+    return text.replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;')
+               .replace(/"/g, '&quot;')
+               .replace(/'/g, '&#039;');
 }
 
 // ========== 合同数据核心操作函数 ==========
@@ -2207,14 +2245,18 @@ window.yearlyContractSearch = function() {
         });
     }
 
-    // 将筛选结果存入全局变量，覆盖当前年度的筛选结果
-    window.filteredContractData[year] = filteredRows;
+   // 将筛选结果存入全局变量，覆盖当前年度的筛选结果
+window.filteredContractData[year] = filteredRows;
+const exportFilterBtn = document.getElementById('exportFilterBtn');
 
-    if (!found) {
-        alert('未找到匹配的合同数据');
-        window.filteredContractData[year] = []; // 无结果则置空
-    }
-};
+if (!found) {
+    alert('未找到匹配的合同数据');
+    window.filteredContractData[year] = []; // 无结果则置空
+    exportFilterBtn.disabled = true; // 无结果禁用按钮
+} else {
+    exportFilterBtn.disabled = false; // 有结果启用按钮
+}
+}; // 补充yearlyContractSearch函数的闭合标签
 
 // 清空筛选函数
 window.clearYearlySearch = function() {
@@ -2222,14 +2264,13 @@ window.clearYearlySearch = function() {
     document.getElementById('yearlySearchType').value = 'all';
     const activePanel = document.querySelector('.year-panel.active');
     const year = activePanel ? activePanel.id.replace('panel-', '') : '';
-    // 清除当前年度的筛选临时结果
+    const exportFilterBtn = document.getElementById('exportFilterBtn');
     if (year) window.filteredContractData[year] = null;
-    // 清空高亮
+    if(exportFilterBtn) exportFilterBtn.disabled = true;
     document.querySelectorAll('.year-panel tbody tr').forEach(row => {
         row.style.backgroundColor = '';
     });
 };
-
        // 导入Excel函数
        window.importExcel = function() {
            try {
@@ -2254,98 +2295,9 @@ window.clearYearlySearch = function() {
                    return;
                }
 
-               // 分年度表头映射规则
-               const yearHeaderConfig = {
-                   "2014": [
-                       "序号", "合同审批号", "合同名称", "是否归档", "应归档份数", "已归档份数",
-                       "签订时间", "经办人", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "合同期限-起始", "合同期限-结束", "合同乙方", "收费单位", "合同履行", "违约情况",
-                       "合同是否到期", "备注"
-                   ],
-                   "2015": [
-                       "序号", "合同编号", "合同名称", "客方/收费单位",
-                       "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "签订时间", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档", "备注"
-                   ],
-                   "2016": [
-                       "序号", "合同编号", "合同名称", "客方/收费单位",
-                       "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "签订时间", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档", "备注"
-                   ],
-                   "2017": [
-                       "序号", "合同编号", "合同名称", "客方/收费单位",
-                       "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "签订时间", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档", "备注"
-                   ],
-                   "2018": [
-                       "序号", "合同编号", "合同名称", "客方/收费单位",
-                       "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "签订时间", "经办部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档", "备注"
-                   ],
-                   "2019": [
-                       "序号", "合同编号", "合同名称", "客方/收费单位",
-                       "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "签订时间", "经办部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档", "到期提醒", "备注"
-                   ],
-                   "2020": [
-                       "合同编号", "合同名称", "客方/收费单位",
-                       "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "签订时间", "经办部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档", "到期提醒", "备注"
-                   ],
-                   "2021": [
-                       "合同编号", "分发日期", "合同名称", "客方/收费单位",
-                       "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档", "到期提醒", "备注"
-                   ],
-                   "2022": [
-                       "合同编号", "分发日期", "合同名称", "客方/收费单位",
-                       "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "签订时间", "经办部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档",
-                       "是否及时归档（分发日起3个月内完成归档）", "到期提醒", "备注"
-                   ],
-                   "2023": [
-                       "合同编号", "分发日期", "合同名称", "客方/收费单位",
-                       "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档",
-                       "是否及时归档（分发日起3个月内完成归档）", "到期提醒", "备注"
-                   ],
-                   "2024": [
-                       "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位",
-                       "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                       "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档",
-                       "是否及时归档（分发日起3个月内完成归档）", "到期提醒", "备注", "当月考核数量"
-                   ],
-                   "2025": [
-                       "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位",
-                       "合同金额", "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                       "合同期限-起始", "合同期限-结束", "是否归档",
-                       "是否及时归档（分发日起3个月内完成归档）",
-                       "合同签订日期是否早于审批日期（分发时间）", "原因",
-                       "合同履约时间是否早于审批日期（申请时间）", "原因2",
-                       "到期提醒", "备注"
-                   ],
-                   "2026": [
-                       "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位", "合同金额",
-                       "签订时间", "经办部门", "经办人", "负责部门", "合同类型", "备注", "份数",
-                       "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "是否及时归档（分发日起3个月内完成归档）",
-                       "合同签订日期是否早于审批日期（分发时间）", "原因", "合同履约时间是否早于审批日期（申请时间）",
-                       "原因", "到期提醒", "当月考核数量", "备注"
-                   ]
-               };
-
-               // 当前年度标准表头
-               const targetHeaders = yearHeaderConfig[year] || yearHeaderConfig["2014"];
-               const dateFields = [
+               
+              // 当前年度标准表头（引用全局唯一配置）
+const targetHeaders = window.yearHeaderConfig[year] || window.yearHeaderConfig["2014"];               const dateFields = [
                    "申请时间", "分发日期", "签订时间", "归档日期",
                    "合同期限-起始", "合同期限-结束", "合同期限（起始）", "合同期限（结束）",
                    "签订日期", "签订时间", "归档日期", "起始", "结束", "合同履行时间", "合同履行"
@@ -2445,95 +2397,8 @@ window.clearYearlySearch = function() {
            const year = activePanel.id.replace('panel-', '');
            // 读取本地永久保存的最新数据
            const contractData = getContractData(year);
-           // 对应年度的表头
-           const yearHeaderConfig = {
-               "2014": [
-                   "序号", "合同审批号", "合同名称", "是否归档", "应归档份数", "已归档份数",
-                   "签订时间", "经办人", "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "合同期限-起始", "合同期限-结束", "合同乙方", "收费单位", "合同履行", "违约情况",
-                   "合同是否到期", "备注"
-               ],
-               "2015": [
-                   "序号", "合同编号", "合同名称", "客方/收费单位",
-                   "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "签订时间", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档", "备注"
-               ],
-               "2016": [
-                   "序号", "合同编号", "合同名称", "客方/收费单位",
-                   "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "签订时间", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档", "备注"
-               ],
-               "2017": [
-                   "序号", "合同编号", "合同名称", "客方/收费单位",
-                   "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "签订时间", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档", "备注"
-               ],
-               "2018": [
-                   "序号", "合同编号", "合同名称", "客方/收费单位",
-                   "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "签订时间", "经办部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档", "备注"
-               ],
-               "2019": [
-                   "序号", "合同编号", "合同名称", "客方/收费单位",
-                   "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "签订时间", "经办部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档", "到期提醒", "备注"
-               ],
-               "2020": [
-                   "合同编号", "合同名称", "客方/收费单位",
-                   "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "签订时间", "经办部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档", "到期提醒", "备注"
-               ],
-               "2021": [
-                   "合同编号", "分发日期", "合同名称", "客方/收费单位",
-                   "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档", "到期提醒", "备注"
-               ],
-               "2022": [
-                   "合同编号", "分发日期", "合同名称", "客方/收费单位",
-                   "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "签订时间", "经办部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档",
-                   "是否及时归档（分发日起3个月内完成归档）", "到期提醒", "备注"
-               ],
-               "2023": [
-                   "合同编号", "分发日期", "合同名称", "客方/收费单位",
-                   "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档",
-                   "是否及时归档（分发日起3个月内完成归档）", "到期提醒", "备注"
-               ],
-               "2024": [
-                   "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位",
-                   "合同金额-合同总金额", "合同金额-每月费用", "合同金额-其他",
-                   "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档",
-                   "是否及时归档（分发日起3个月内完成归档）", "到期提醒", "备注", "当月考核数量"
-               ],
-               "2025": [
-                   "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位",
-                   "合同金额", "签订时间", "经办部门", "负责部门", "经办人", "合同类型", "备注", "份数", "归档日期",
-                   "合同期限-起始", "合同期限-结束", "是否归档",
-                   "是否及时归档（分发日起3个月内完成归档）",
-                   "合同签订日期是否早于审批日期（分发时间）", "原因",
-                   "合同履约时间是否早于审批日期（申请时间）", "原因2",
-                   "到期提醒", "备注"
-               ],
-               "2026": [
-                   "合同编号", "申请时间", "分发日期", "合同名称", "客方/收费单位", "合同金额",
-                   "签订时间", "经办部门", "经办人", "负责部门", "合同类型", "备注", "份数",
-                   "归档日期", "合同期限-起始", "合同期限-结束", "是否归档", "是否及时归档（分发日起3个月内完成归档）",
-                   "合同签订日期是否早于审批日期（分发时间）", "原因", "合同履约时间是否早于审批日期（申请时间）",
-                   "原因", "到期提醒", "当月考核数量", "备注"
-               ]
-           };
-           const headers = yearHeaderConfig[year] || yearHeaderConfig["2014"];
+          
+              const headers = yearHeaderConfig[year] || yearHeaderConfig["2014"];
            
            if (!contractData || contractData.length === 0) {
                alert('当前年度暂无合同数据，无法导出');
@@ -2551,17 +2416,58 @@ window.clearYearlySearch = function() {
            saveAs(blob, `兆翔物业_${year}年合同台账.xlsx`);
        };
 
-       // 快速开始页面：全局全文搜索
+// 导出当前年度筛选后的Excel结果（全局定义，和exportExcel平级）
+window.exportFilteredExcel = function() {
+    const activePanel = document.querySelector('.year-panel.active');
+    if (!activePanel) {
+        alert('未找到当前激活的年度面板，请先选择年度');
+        return;
+    }
+    const year = activePanel.id.replace('panel-', '');
+    const filteredData = window.filteredContractData[year];
+    if (!filteredData || filteredData.length === 0) {
+        alert('暂无筛选结果可导出，请先执行筛选');
+        return;
+    }
+   const headers = window.yearHeaderConfig[year] || window.yearHeaderConfig["2014"];
+    const wb = XLSX.utils.book_new();
+    const wsData = [headers, ...filteredData];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb, ws, year + '年筛选结果');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    saveAs(blob, `兆翔物业_${year}年合同筛选结果.xlsx`);
+};
+// 导出快速开始页面的全局筛选结果（全局定义，和exportExcel平级）
+window.exportQuickSearchResult = function() {
+    const searchData = window.quickSearchResult;
+    if (!searchData || searchData.length === 0) {
+        alert('暂无全局筛选结果可导出，请先执行筛选');
+        return;
+    }
+    const headers = ["年份", "合同完整内容"];
+    const exportData = searchData.map(item => {
+        return [item.year, item.fullRow.join(' | ')];
+    });
+    const wb = XLSX.utils.book_new();
+    const wsData = [headers, ...exportData];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb, ws, '全局合同筛选结果');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    saveAs(blob, `兆翔物业_全局合同筛选结果.xlsx`);
+};
+             // 快速开始页面：全局全文搜索
        window.quickSearch = function() {
            const keyword = document.getElementById('quickSearchInput').value.trim().toLowerCase();
            if (!keyword) {
                alert('请输入关键词');
                return;
            }
-
+           // 新增：先清空上一次的搜索结果
+           window.quickSearchResult = [];
            const tbody = document.querySelector('#quickResultTable tbody');
            tbody.innerHTML = '';
-
            const years = ['2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025','2026'];
            let resultCount = 0;
 
@@ -2570,54 +2476,69 @@ window.clearYearlySearch = function() {
                let contracts = getContractData(year);
                if (!contracts || contracts.length === 0) return;
 
-               contracts.forEach((row, rowIndex) => {
-                   const rowText = row.map(cell => (cell || '').toString()).join(' ').toLowerCase();
-                   if (rowText.includes(keyword)) {
-                       // 行渲染逻辑
-                       const tr = document.createElement('tr');
-                       const tdYear = document.createElement('td');
-                       tdYear.textContent = year;
-                       tr.appendChild(tdYear);
+         contracts.forEach((row, rowIndex) => {
+    const rowText = row.map(cell => (cell || '').toString()).join(' ').toLowerCase();
+    if (rowText.includes(keyword)) {
+        // 行渲染逻辑
+        const tr = document.createElement('tr');
+        const tdYear = document.createElement('td');
+        tdYear.textContent = year;
+        tr.appendChild(tdYear);
 
-                       const summary = row.map(cell => (cell || '').toString()).join(' | ');
-                       const tdSummary = document.createElement('td');
-                       tdSummary.textContent = summary.length > 120 ? summary.substring(0,120) + '…' : summary;
-                       tr.appendChild(tdSummary);
+        const summary = row.map(cell => (cell || '').toString()).join(' | ');
+        const tdSummary = document.createElement('td');
+        tdSummary.textContent = summary.length > 120 ? summary.substring(0,120) + '…' : summary;
+        tr.appendChild(tdSummary);
 
-                       const tdAction = document.createElement('td');
-                       const btn = document.createElement('button');
-                       btn.textContent = '定位到年度';
-                       btn.className = 'btn btn-sm btn-default';
-                       btn.onclick = function() {
-                           goToYearAndHighlight(year, row, rowIndex);
-                       };
-                       tdAction.appendChild(btn);
-                       tr.appendChild(tdAction);
+        const tdAction = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.textContent = '定位到年度';
+        btn.className = 'btn btn-sm btn-default';
+        btn.onclick = function() {
+            goToYearAndHighlight(year, row, rowIndex);
+        };
+        tdAction.appendChild(btn);
+        tr.appendChild(tdAction);
 
-                       tbody.appendChild(tr);
-                       resultCount++;
-                   }
-               });
+        tbody.appendChild(tr);
+        resultCount++;
+        // 把匹配结果存入全局变量
+        window.quickSearchResult.push({
+            year: year,
+            summary: summary,
+            fullRow: row
+        });
+    }
+});
            });
-
-           if (resultCount === 0) {
-               const tr = document.createElement('tr');
-               const td = document.createElement('td');
-               td.colSpan = 3;
-               td.textContent = '未找到匹配的合同';
-               td.style.textAlign = 'center';
-               td.style.color = '#656d76';
-               tr.appendChild(td);
-               tbody.appendChild(tr);
-           }
+// 控制导出按钮状态
+const exportQuickBtn = document.getElementById('exportQuickBtn');
+if (resultCount === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 3;
+    td.textContent = '未找到匹配的合同';
+    td.style.textAlign = 'center';
+    td.style.color = '#656d76';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    exportQuickBtn.disabled = true; // 无结果禁用按钮
+} else {
+    exportQuickBtn.disabled = false; // 有结果启用按钮
+}
        };
 
-       // 清空快速搜索结果
-       window.clearQuickSearch = function() {
-           document.getElementById('quickSearchInput').value = '';
-           const tbody = document.querySelector('#quickResultTable tbody');
-           tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#656d76;">请输入关键词开始筛选</td></tr>';
-       };
+      // 清空快速搜索结果
+window.clearQuickSearch = function() {
+    document.getElementById('quickSearchInput').value = '';
+    const tbody = document.querySelector('#quickResultTable tbody');
+    const exportQuickBtn = document.getElementById('exportQuickBtn');
+    // 清空全局筛选结果
+    window.quickSearchResult = [];
+    // 禁用导出按钮
+    exportQuickBtn.disabled = true;
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#656d76;">请输入关键词开始筛选</td></tr>';
+};
 
        // 定位到某一年度并高亮指定合同行
        function goToYearAndHighlight(year, rowData, rowIndex) {
@@ -2682,96 +2603,117 @@ window.clearYearlySearch = function() {
                } else {
                    alert(`在 ${year} 年未找到对应合同，可能数据已变化，请手动查找。`);
                }
-           }, 300);
+           }, 500);
        }
-  // 审计子导航切换
-       document.addEventListener('DOMContentLoaded', function() {
-           // 先校验登录状态，未登录不初始化系统
-           const isLogined = window.checkLogin();
-           if (!isLogined) return;
+// 抽离独立的系统初始化函数
+function initSystem() {
+    // 主导航切换
+    document.querySelectorAll('.main-nav-item').forEach(item => {
+        item.addEventListener('click', function() {
+            document.querySelectorAll('.main-nav-item').forEach(nav => nav.classList.remove('active'));
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            this.classList.add('active');
+            const targetPage = this.getAttribute('data-page');
+            const targetEl = document.getElementById('page-' + targetPage);
+            if (targetEl) targetEl.classList.add('active');
+        });
+    });
 
-           // 主导航切换
-           document.querySelectorAll('.main-nav-item').forEach(item => {
-               item.addEventListener('click', function() {
-                   document.querySelectorAll('.main-nav-item').forEach(nav => nav.classList.remove('active'));
-                   document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-                   this.classList.add('active');
-                   const targetPage = this.getAttribute('data-page');
-                   const targetEl = document.getElementById('page-' + targetPage);
-                   if (targetEl) targetEl.classList.add('active');
-               });
-           });
+    // 审计子导航切换
+    document.querySelectorAll('.sub-nav-item').forEach(item => {
+        item.addEventListener('click', function() {
+            document.querySelectorAll('.sub-nav-item').forEach(nav => nav.classList.remove('active'));
+            document.querySelectorAll('.sub-page').forEach(page => page.classList.remove('active'));
+            this.classList.add('active');
+            const targetSubpage = this.getAttribute('data-subpage');
+            const targetEl = document.getElementById('subpage-' + targetSubpage);
+            if (targetEl) targetEl.classList.add('active');
+        });
+    });
+    
+    // 年度标签切换
+    const yearTabs = document.querySelectorAll('.year-tab');
+    const yearPanels = document.querySelectorAll('.year-panel');
+    const exportFilterBtn = document.getElementById('exportFilterBtn');
+    yearTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const year = this.dataset.year;
+            yearTabs.forEach(t => t.classList.remove('active'));
+            yearPanels.forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+            const panel = document.getElementById('panel-' + year);
+            if (panel) panel.classList.add('active');
+            
+            window.filteredContractData[year] = null;
+            if(exportFilterBtn) exportFilterBtn.disabled = true;
+            document.getElementById('yearlySearchInput').value = '';
+            
+            const contractData = getContractData(year);
+            renderContractTable(year, contractData);
+            updateSearchOptions();
+        });
+    });
+    
+    // 初始化当前激活年度
+    const activeYearTab = document.querySelector('.year-tab.active');
+    if (activeYearTab) {
+        const activeYear = activeYearTab.dataset.year;
+        const activeData = getContractData(activeYear);
+        renderContractTable(activeYear, activeData);
+        updateSearchOptions();
+    }
 
-           // 审计子导航切换
-           document.querySelectorAll('.sub-nav-item').forEach(item => {
-               item.addEventListener('click', function() {
-                   document.querySelectorAll('.sub-nav-item').forEach(nav => nav.classList.remove('active'));
-                   document.querySelectorAll('.sub-page').forEach(page => page.classList.remove('active'));
-                   this.classList.add('active');
-                   const targetSubpage = this.getAttribute('data-subpage');
-                   const targetEl = document.getElementById('subpage-' + targetSubpage);
-                   if (targetEl) targetEl.classList.add('active');
-               });
-           });
-           
-           // 年度标签切换
-           const yearTabs = document.querySelectorAll('.year-tab');
-           const yearPanels = document.querySelectorAll('.year-panel');
-           yearTabs.forEach(tab => {
-               tab.addEventListener('click', function() {
-                   const year = this.dataset.year;
-                   yearTabs.forEach(t => t.classList.remove('active'));
-                   yearPanels.forEach(p => p.classList.remove('active'));
-                   this.classList.add('active');
-                   const panel = document.getElementById('panel-' + year);
-                   if (panel) panel.classList.add('active');
-                   
-                   // 加载该年度数据并更新筛选下拉框
-                   const contractData = getContractData(year);
-                   renderContractTable(year, contractData);
-                   updateSearchOptions();
-               });
-           });
-           
-           // 初始化：加载当前激活年度的数据，并更新下拉选项
-           const activeYearTab = document.querySelector('.year-tab.active');
-           if (activeYearTab) {
-               const activeYear = activeYearTab.dataset.year;
-               const activeData = getContractData(activeYear);
-               renderContractTable(activeYear, activeData);
-               updateSearchOptions();
-           }
-       });
+    // 初始化导出按钮禁用状态
+    const exportQuickBtn = document.getElementById('exportQuickBtn');
+    if (exportFilterBtn) exportFilterBtn.disabled = true;
+    if (exportQuickBtn) exportQuickBtn.disabled = true;
 
-       // 合同文本比对功能
-       function textCompare() {
-           const baseText = document.getElementById('baseText').value.trim();
-           const compareText = document.getElementById('compareText').value.trim();
-           if (!baseText || !compareText) {
-               alert('请输入基准合同文本和待比对合同文本');
-               return;
-           }
+    // 登录页回车键登录
+    const loginAccount = document.getElementById('loginAccount');
+    const loginPwd = document.getElementById('loginPwd');
+    if (loginAccount) {
+        loginAccount.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') loginCheck();
+        });
+    }
+    if (loginPwd) {
+        loginPwd.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') loginCheck();
+        });
+    }
+}
+// 页面加载时的DOMContentLoaded事件
+document.addEventListener('DOMContentLoaded', function() {
+    const isLogined = window.checkLogin();
+    if (isLogined) {
+        initSystem();
+    }
+});
+     // 合同文本比对功能
+function textCompare() {
+    const baseText = document.getElementById('baseText').value.trim();
+    const compareText = document.getElementById('compareText').value.trim();
+    if (!baseText || !compareText) {
+        alert('请输入基准合同文本和待比对合同文本');
+        return;
+    }
+    const dmp = new diff_match_patch();
+    const diffs = dmp.diff_main(baseText, compareText);
+    dmp.diff_cleanupSemantic(diffs);
 
-           // 初始化diff工具
-           const dmp = new diff_match_patch();
-           const diffs = dmp.diff_main(baseText, compareText);
-           dmp.diff_cleanupSemantic(diffs);
-
-           // 生成高亮HTML结果
-           let resultHtml = '';
-           diffs.forEach(([type, text]) => {
-               if (type === 0) {
-                   resultHtml += text; // 无差异
-               } else if (type === 1) {
-                   resultHtml += `<span class="diff-add">【新增】${text}</span>`; // 新增内容
-               } else if (type === -1) {
-                   resultHtml += `<span class="diff-del">【删除】${text}</span>`; // 删除内容
-               }
-           });
-
-           document.getElementById('compareResult').innerHTML = resultHtml;
-       }
-
+    let resultHtml = '';
+    diffs.forEach(([type, text]) => {
+        const escapedText = htmlEscape(text);
+        if (type === 0) {
+            resultHtml += escapedText;
+        } else if (type === 1) {
+            resultHtml += `<span class="diff-add">【新增】${escapedText}</span>`;
+        } else if (type === -1) {
+            resultHtml += `<span class="diff-del">【删除】${escapedText}</span>`;
+        }
+    });
+    document.getElementById('compareResult').innerHTML = resultHtml;
+}
        // 清空比对内容
        function clearCompare() {
            document.getElementById('baseText').value = '';

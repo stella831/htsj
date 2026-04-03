@@ -6,12 +6,26 @@
    <title>兆翔物业多年度合同管理与审计比对系统（2014-2026）</title>
    <meta name="description" content="整合2014-2026年8000+份合同台账管理与物业合同审计比对功能，支持合规核查、价格比对、风险管控、报告生成、底稿归档一体化操作">
    <meta name="keywords" content="多年度合同台账,合同审计比对,合规核查,价格比对,风险管控,底稿归档,兆翔物业,2014-2026">
-   <!-- 审计功能依赖库 替换为国内稳定CDN -->
-   <script src="https://cdn.bootcdn.net/ajax/libs/diff-match-patch/20121119/diff_match_patch.js"></script>
-   <script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-   <script src="https://cdn.bootcdn.net/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-   <script src="https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-   <script src="https://cdn.bootcdn.net/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>    
+  <!-- 审计功能依赖库（字节跳动国内稳定CDN） -->
+<script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-100-y/diff-match-patch/20121119/diff_match_patch.js"></script>
+<script src="https://lf9-cdn-tos.bytecdntp.com/cdn/expire-100-y/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-100-y/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-100-y/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-100-y/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>  
+ <!-- 库加载状态检测 -->
+<script>
+    // 页面加载完成后检查依赖库
+    window.addEventListener('load', function() {
+        console.log('=== 依赖库加载状态检查 ===');
+        console.log('diff_match_patch:', typeof diff_match_patch !== 'undefined' ? '✅ 加载成功' : '❌ 加载失败');
+        console.log('XLSX:', typeof XLSX !== 'undefined' ? '✅ 加载成功' : '❌ 加载失败');
+        console.log('saveAs:', typeof saveAs !== 'undefined' ? '✅ 加载成功' : '❌ 加载失败');
+        
+        if (typeof diff_match_patch === 'undefined') {
+            alert('⚠️ 比对依赖库加载失败！\n\n请按F12打开控制台查看Network标签页，确认网络连接正常，或使用第三步的「离线内嵌方案」');
+        }
+    });
+</script>
    <style>
        * {
            margin: 0;
@@ -2092,24 +2106,16 @@ function formatDate(dateStr) {
     return dateStr;
 }
 
-// HTML特殊字符转义，防止XSS攻击
-function htmlEscape(text) {
+// HTML特殊字符转义，防止XSS攻击（全局唯一）
+window.htmlEscape = function(text) {
+    if (!text) return '';
     return text.replace(/&/g, '&amp;')
                .replace(/</g, '&lt;')
                .replace(/>/g, '&gt;')
                .replace(/"/g, '&quot;')
-               .replace(/'/g, '&#039;');
+               .replace(/'/g, '&#039;')
+               .replace(/\n/g, '<br/>'); // 保留原文本换行，正确渲染
 }
-
-// HTML特殊字符转义，防止XSS攻击
-function htmlEscape(text) {
-    return text.replace(/&/g, '&amp;')
-               .replace(/</g, '&lt;')
-               .replace(/>/g, '&gt;')
-               .replace(/"/g, '&quot;')
-               .replace(/'/g, '&#039;');
-}
-
 // ========== 合同数据核心操作函数 ==========
 // 保存合同数据到浏览器本地（永久存储，刷新/关闭浏览器不丢失）
 function saveContractData(year, data) {
@@ -2689,49 +2695,79 @@ document.addEventListener('DOMContentLoaded', function() {
         initSystem();
     }
 });
-     // 合同文本比对功能
-function textCompare() {
-    const baseText = document.getElementById('baseText').value.trim();
-    const compareText = document.getElementById('compareText').value.trim();
-    if (!baseText || !compareText) {
-        alert('请输入基准合同文本和待比对合同文本');
+// 合同文本比对功能（全局挂载，确保HTML按钮可调用）
+window.textCompare = function() {
+    // 1. 校验比对依赖库是否加载成功
+    if (typeof diff_match_patch === 'undefined') {
+        alert('错误：比对依赖库加载失败，请刷新页面重试或检查网络');
         return;
     }
-    const dmp = new diff_match_patch();
-    const diffs = dmp.diff_main(baseText, compareText);
-    dmp.diff_cleanupSemantic(diffs);
 
-    let resultHtml = '';
-    diffs.forEach(([type, text]) => {
-        const escapedText = htmlEscape(text);
-        if (type === 0) {
-            resultHtml += escapedText;
-        } else if (type === 1) {
-            resultHtml += `<span class="diff-add">【新增】${escapedText}</span>`;
-        } else if (type === -1) {
-            resultHtml += `<span class="diff-del">【删除】${escapedText}</span>`;
-        }
-    });
-    document.getElementById('compareResult').innerHTML = resultHtml;
+    // 2. 获取输入内容（不trim，避免首尾空格比对丢失）
+    const baseText = document.getElementById('baseText').value;
+    const compareText = document.getElementById('compareText').value;
+    const resultBox = document.getElementById('compareResult');
+
+    // 3. 空值校验
+    if (!baseText || !compareText) {
+        alert('请输入完整的基准合同文本和待比对合同文本');
+        return;
+    }
+
+    try {
+        // 4. 执行文本比对
+        const dmp = new diff_match_patch();
+        const diffs = dmp.diff_main(baseText, compareText);
+        dmp.diff_cleanupSemantic(diffs); // 优化语义比对结果
+
+        // 5. 生成高亮HTML结果
+        let resultHtml = '';
+        diffs.forEach(([type, text]) => {
+            const escapedText = window.htmlEscape(text);
+            if (type === 0) {
+                // 无差异内容，正常显示
+                resultHtml += escapedText;
+            } else if (type === 1) {
+                // 新增内容，绿色高亮
+                resultHtml += `<span class="diff-add">【新增】${escapedText}</span>`;
+            } else if (type === -1) {
+                // 删除内容，红色高亮+删除线
+                resultHtml += `<span class="diff-del">【删除】${escapedText}</span>`;
+            }
+        });
+
+        // 6. 渲染结果到页面
+        resultBox.innerHTML = resultHtml;
+    } catch (err) {
+        console.error('比对执行出错：', err);
+        alert(`比对失败：${err.message}，请刷新页面重试`);
+        resultBox.innerHTML = '比对执行出错，请刷新页面后重试';
+    }
 }
-       // 清空比对内容
-       function clearCompare() {
-           document.getElementById('baseText').value = '';
-           document.getElementById('compareText').value = '';
-           document.getElementById('compareResult').innerHTML = '请输入合同文本后点击「开始比对」';
-       }
+     // 清空比对内容（全局挂载）
+window.clearCompare = function() {
+    document.getElementById('baseText').value = '';
+    document.getElementById('compareText').value = '';
+    document.getElementById('compareResult').innerHTML = '请输入合同文本后点击「开始比对」';
+};
 
-       // 导出比对结果
-       function exportCompareResult() {
-           const result = document.getElementById('compareResult').innerText;
-           if (!result || result.includes('请输入合同文本')) {
-               alert('暂无比对结果可导出');
-               return;
-           }
-           const blob = new Blob([result], { type: 'text/plain;charset=utf-8' });
-           saveAs(blob, '合同文本比对结果.txt');
-       }
-
+// 导出比对结果（全局挂载）
+window.exportCompareResult = function() {
+    const result = document.getElementById('compareResult').innerText;
+    if (!result || result.includes('请输入合同文本')) {
+        alert('暂无比对结果可导出');
+        return;
+    }
+    // 校验导出依赖库
+    if (typeof saveAs === 'undefined') {
+        alert('错误：导出依赖库加载失败，请刷新页面重试');
+        return;
+    }
+    // 生成带日期的文件名，避免覆盖
+    const fileName = `兆翔物业_合同文本比对结果_${new Date().toLocaleDateString().replace(/\//g, '-')}.txt`;
+    const blob = new Blob([result], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, fileName);
+};
        // 合规核查功能（简化实现，可根据实际规则扩展）
        function complianceCheck() {
            alert('合规核查功能已触发，正在遍历全年度合同数据...\n\n完整合规核查规则可根据公司内部制度定制化开发，当前为演示版本，可导入合同数据后使用完整功能。');

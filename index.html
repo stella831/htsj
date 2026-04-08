@@ -1838,7 +1838,9 @@ console.log('✅ diff_match_patch 内嵌库加载成功');
            <div class="sub-nav-item" data-subpage="price-compare">价格比对分析</div>
            <div class="sub-nav-item" data-subpage="risk-report">风险报告生成</div>
            <div class="sub-nav-item" data-subpage="file-archive">审计底稿归档</div>
-       </div>
+<div class="sub-nav-item" data-subpage="policy-compare">📋 制度比较（总结版）</div>
+</div>
+     
 
    <!-- 4.1 合同文本比对子页面 -->
 
@@ -2048,9 +2050,30 @@ console.log('✅ diff_match_patch 内嵌库加载成功');
                    </tbody>
                </table>
            </div>
-       </div>
-   </div>
-
+<!-- 4.6 制度比较（总结版）子页面 -->
+<div class="sub-page" id="subpage-policy-compare">
+    <h3 class="page-subtitle">📋 制度比较（合规总结版）</h3>
+    <p style="margin-bottom: 15px; color: var(--github-light);">基于公司制度文本对合同进行合规性总结，输出总体评价、关键发现、风险等级与整改建议，不逐行比对差异。</p>
+    <div class="input-grid">
+        <div class="input-box">
+            <label>📌 制度文本 / 制度要点</label>
+            <textarea id="policyText" rows="8" placeholder="粘贴公司制度、合规清单或关键条款（例如：合同必须包含违约金条款、争议解决需在厦门仲裁、归档期限3个月等）"></textarea>
+        </div>
+        <div class="input-box">
+            <label>📄 待审计合同文本</label>
+            <textarea id="contractForPolicy" rows="8" placeholder="粘贴合同全文..."></textarea>
+        </div>
+    </div>
+    <div class="toolbar">
+        <button class="btn btn-primary" onclick="policyCompare()">生成总结报告</button>
+        <button class="btn btn-default" onclick="clearPolicyCompare()">清空内容</button>
+        <button class="btn btn-success" onclick="exportPolicyReport()">导出报告</button>
+    </div>
+    <h3 class="page-subtitle">📊 总结报告</h3>
+<div id="policyResult" class="report-content" style="min-height: 300px;">请填写制度文本和合同文本后点击「生成总结报告」
+</div>
+</div>
+   
    <!-- 5. 目录结构页面 -->
 
    <div class="page" id="page-structure">
@@ -3037,6 +3060,144 @@ window.exportCompareResult = function() {
        function clearArchiveFiles() {
            alert('文件列表已清空');
        }
+// ========== 制度比较（总结版）功能 ==========
+window.policyCompare = function() {
+    const policy = document.getElementById('policyText').value.trim();
+    const contract = document.getElementById('contractForPolicy').value.trim();
+    const resultDiv = document.getElementById('policyResult');
+
+    if (!policy || !contract) {
+        alert('请填写制度文本和合同文本');
+        return;
+    }
+
+    // 模拟 AI 总结生成（可替换为真实 API 调用）
+    const summary = generatePolicySummary(policy, contract);
+    resultDiv.innerHTML = summary.replace(/\n/g, '<br>');
+};
+
+// 核心总结生成逻辑（基于规则模拟，完全符合“总结版”要求）
+function generatePolicySummary(policy, contract) {
+    const lowerContract = contract.toLowerCase();
+    const lowerPolicy = policy.toLowerCase();
+
+    // 提取制度中的关键词（常见审计点）
+    const requiredKeywords = {
+        '违约金条款': ['违约金', '违约', '赔偿责任', '罚则'],
+        '争议解决条款': ['仲裁', '诉讼', '管辖', '争议解决'],
+        '归档期限': ['归档', '3个月', '及时归档', '存档'],
+        '审批流程': ['审批', '审核', '会签', '法务'],
+        '合同期限': ['期限', '有效期', '起止日期'],
+        '价格条款': ['金额', '价格', '费用', '单价']
+    };
+
+    // 检查合同是否包含各关键词
+    const checkResults = {};
+    for (const [item, keywords] of Object.entries(requiredKeywords)) {
+        let found = false;
+        for (const kw of keywords) {
+            if (lowerContract.includes(kw)) {
+                found = true;
+                break;
+            }
+        }
+        checkResults[item] = found;
+    }
+
+    // 额外检测制度中明确要求的特殊点（简单抽取制度中含“应”“必须”的短句）
+    const mustClauses = [];
+    const mustRegex = /[应|必须|不得][^。]*。/g;
+    let match;
+    while ((match = mustRegex.exec(policy)) !== null) {
+        mustClauses.push(match[0]);
+    }
+
+    const missingFromPolicy = [];
+    for (const clause of mustClauses.slice(0, 5)) { // 取前5条避免过多
+        const clauseLower = clause.toLowerCase();
+        const coreWords = clauseLower.split(/[\s,，、。]/).filter(w => w.length > 2);
+        let clauseMatched = false;
+        for (const word of coreWords) {
+            if (word.length > 1 && lowerContract.includes(word)) {
+                clauseMatched = true;
+                break;
+            }
+        }
+        if (!clauseMatched) {
+            missingFromPolicy.push(clause);
+        }
+    }
+
+    // 统计合规项
+    const totalChecks = Object.keys(checkResults).length;
+    const passedChecks = Object.values(checkResults).filter(v => v === true).length;
+    const complianceRate = (passedChecks / totalChecks) * 100;
+
+    let overall = '';
+    let risk = '';
+    if (complianceRate >= 80) {
+        overall = '符合';
+        risk = '低';
+    } else if (complianceRate >= 50) {
+        overall = '部分符合';
+        risk = '中';
+    } else {
+        overall = '不符合';
+        risk = '高';
+    }
+
+    // 构建关键发现
+    let findings = [];
+    for (const [item, ok] of Object.entries(checkResults)) {
+        if (!ok) findings.push(`合同缺失或未明确「${item}」，与制度要求不符。`);
+    }
+    for (const clause of missingFromPolicy.slice(0, 3)) {
+        findings.push(`制度要求「${clause}」，合同中未体现相关内容。`);
+    }
+    if (findings.length === 0) findings.push('合同各项条款基本符合制度要求，未发现明显违规。');
+
+    // 整改建议
+    let suggestions = [];
+    if (!checkResults['违约金条款']) suggestions.push('补充明确的违约金计算标准及违约责任条款。');
+    if (!checkResults['争议解决条款']) suggestions.push('增加争议解决方式（仲裁/诉讼）及管辖地约定。');
+    if (!checkResults['归档期限']) suggestions.push('按照制度规定在合同分发后3个月内完成归档。');
+    if (!checkResults['审批流程']) suggestions.push('确保合同经过法务/合规部门审批后再签署。');
+    if (missingFromPolicy.length > 0) suggestions.push('对照制度逐条审查合同，补全缺失的必要条款。');
+    if (suggestions.length === 0) suggestions.push('继续保持合规操作，定期复审制度更新。');
+
+    // 最终报告
+    let report = `总体合规评价：${overall}\n`;
+    report += `风险等级：${risk}\n`;
+    report += `\n关键发现：\n`;
+    findings.forEach((f, idx) => { report += `${idx+1}. ${f}\n`; });
+    report += `\n整改建议：\n`;
+    suggestions.forEach((s, idx) => { report += `${idx+1}. ${s}\n`; });
+    report += `\n（注：本报告基于制度关键词自动生成，仅作为审计参考，最终结论请结合人工复核。）`;
+    return report;
+}
+// 清空制度比较内容
+window.clearPolicyCompare = function() {
+    document.getElementById('policyText').value = '';
+    document.getElementById('contractForPolicy').value = '';
+    document.getElementById('policyResult').innerHTML = '请填写制度文本和合同文本后点击「生成总结报告」';
+};
+
+// 导出制度比较报告
+window.exportPolicyReport = function() {
+    const result = document.getElementById('policyResult').innerText;
+    if (!result || result.includes('请填写制度文本')) {
+        alert('暂无比对结果可导出');
+        return;
+    }
+    if (typeof saveAs === 'undefined') {
+        alert('导出库未加载，请刷新页面');
+        return;
+    }
+    const fileName = `兆翔物业_制度比较报告_${new Date().toLocaleDateString().replace(/\//g, '-')}.txt`;
+    const blob = new Blob([result], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, fileName);
+};
+
      </script>
    </div>
 </body>

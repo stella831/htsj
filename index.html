@@ -191,9 +191,17 @@ console.log('✅ diff_match_patch 内嵌库加载成功');
 (function(a,b){if("function"==typeof define&&define.amd)define([],b);else if("undefined"!=typeof exports)b();else{var c=b();a.saveAs=a.saveAs||c.saveAs}}(this,function(){"use strict";function b(a,b,c){var d=new XMLHttpRequest;d.open("GET",a),d.responseType="blob",d.onload=function(){a(d.response,b,c)},d.onerror=function(){console.error("could not download file")},d.send()}function c(a){var b=new XMLHttpRequest;b.open("HEAD",a,!1);b.send();return 200<=b.status&&299>=b.status}function d(a){try{a.dispatchEvent(new MouseEvent("click"))}catch(c){var e=document.createEvent("MouseEvents");e.initMouseEvent("click",!0,!0,window,0,0,0,80,20,!1,!1,!1,!1,0,null),a.dispatchEvent(e)}}var e="application/octet-stream",f=navigator.userAgent,g=!!window.chrome&&!window.opera,h=-1!==f.indexOf("Android"),i=-1!==f.indexOf("Edge"),j=window.navigator.userAgent.toLowerCase().indexOf("safari")>-1&&-1===window.navigator.userAgent.toLowerCase().indexOf("chrome"),k="download"in document.createElement("a"),l=function(a){return/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(a.type)},m=function(a,b,c){c=c||{};var d=c.type||a.type||e,f=!1,g=function(){setTimeout(function(){URL.revokeObjectURL(g.href)},4E4)},h=function(){setTimeout(function(){a.slice()},0)},i=URL.createObjectURL(a),j=document.createElement("a");b=String(b);j.href=i,j.download=b,j.className="download-js-link",j.hidden=!0,j.addEventListener("click",g),document.body.appendChild(j),requestAnimationFrame(function(){d(j),document.body.removeChild(j),f=!0}),!1!==c.autoBom&&(l(d)&&(a=new Blob(["\uFEFF",a],{type:d})),g.href=URL.createObjectURL(a)),h()},n=function(a,b,c){if(!c&&a.size>4194304)return!0;var d=[];for(var e in a)a.hasOwnProperty(e)&&d.push(e);if(d.length&&"[object Blob]"===Object.prototype.toString.call(a))return!1;try{return new File([a],b,{type:c||e})}catch(f){return!1}},o=function(a,b,c){if(c?c.noVendor?:!1:!g)return!1;var d;if((d=n(a,b,c))){var e=navigator.webkitGetUserMedia;if(e||"MediaRecorder"in window)return window.chrome?void m(d,b,c):void d.arrayBuffer().then(function(a){m(new Blob([a]),b,c)}).catch(function(a){console.error(a)})}else if("undefined"!=typeof chrome)return!1;try{if(!c||c.noBlob?:!1)throw new Error("No Blob");b=b.replace(/([\/\\])/g,"_");var f=window.webkitRequestFileSystem;f(window.TEMPORARY,a.size+1024,function(c){c.root.getFile(b,{create:!0},function(c){c.createWriter(function(c){c.onwriteend=function(){location.href=c.toURL()},c.onerror=function(a){console.error(a.target.error)},c.write(a)},function(a){console.error(a)})},function(a){console.error(a)})},function(a){console.error(a)})}catch(h){return console.error(h),!1}return!0},p=function(a,b,c){if(!c)c={};var d=a instanceof Blob?a:new Blob([a],{type:c.type||e});if(c.noAutoBom||(l(d.type)&&(d=new Blob(["\uFEFF",d],{type:d.type})),c.type=d.type),o(d,b,c))return;if("download"in HTMLAnchorElement.prototype)return m(d,b,c);var e;if(e=window.open||location.href,"undefined"==typeof e||i||h){try{e=URL.createObjectURL(d),location.href=e}catch(f){if(f.name==="InvalidAccessError")return!1}}else{try{e=window.open(d,"_blank")}catch(f){if(f.name==="InvalidAccessError")return!1}}},q=function(a,b,c){if("string"==typeof a)return b?void b(a,c):void b(a,c);if("undefined"!=typeof b&&"boolean"==typeof b&&(c={autoBom:b},b=void 0),"undefined"==typeof b)b=a.name||"download";var d=a instanceof Blob?a.type:"";c=c||{};if(c.noVendor?:!1)return p(a,b,c);if(j){var e=n(a,b,c);e?m(e,b,c):p(a,b,c)}else if(!o(a,b,c))p(a,b,c)};return q.saveAs=q,q}));
 </script>
 
-<!-- 3. XLSX.js Excel处理核心库 -->
+<!-- 3. XLSX.js Excel处理核心库（CDN优先，离线兜底） -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
+<script>
+// 离线兜底：CDN加载失败时提示
+window.addEventListener('load', function() {
+    if (typeof XLSX === 'undefined') {
+        console.warn('❌ XLSX CDN加载失败，离线环境请手动引入本地XLSX库');
+        alert('警告：Excel处理库加载失败，离线环境请确保网络正常，或手动引入本地XLSX库');
+    }
+});
+</script>
 <!-- 库加载状态检测 -->
 <script>
     // 页面加载完成后检查依赖库
@@ -2050,6 +2058,7 @@ console.log('✅ diff_match_patch 内嵌库加载成功');
                    </tbody>
                </table>
            </div>
+</div>
 <!-- 4.6 制度比较（总结版）子页面 -->
 <div class="sub-page" id="subpage-policy-compare">
     <h3 class="page-subtitle">📋 制度比较（合规总结版）</h3>
@@ -2967,97 +2976,97 @@ window.exportCompareResult = function() {
     const blob = new Blob([result], { type: 'text/plain;charset=utf-8' });
     saveAs(blob, fileName);
 };
-       // 合规核查功能（简化实现，可根据实际规则扩展）
-       function complianceCheck() {
-           alert('合规核查功能已触发，正在遍历全年度合同数据...\n\n完整合规核查规则可根据公司内部制度定制化开发，当前为演示版本，可导入合同数据后使用完整功能。');
-           document.getElementById('complianceResult').textContent = `=== 兆翔物业合同合规性核查报告 ===\n核查时间：${new Date().toLocaleString()}\n核查范围：2014-2026年全量合同台账\n\n【核查结果汇总】\n1. 合同总数：待统计（请导入合同数据）\n2. 合规合同数：待统计\n3. 不合规合同数：待统计\n4. 问题项汇总：\n   - 归档不及时：待核查\n   - 审批流程不完整：待核查\n   - 日期逻辑异常：待核查\n   - 金额权限不匹配：待核查\n\n【详细核查结果】\n请导入合同台账数据后，重新执行核查，系统将自动生成详细问题清单。`;
-       }
+     // 合规核查功能（简化实现，可根据实际规则扩展）
+window.complianceCheck = function() {
+    alert('合规核查功能已触发，正在遍历全年度合同数据...\n\n完整合规核查规则可根据公司内部制度定制化开发，当前为演示版本，可导入合同数据后使用完整功能。');
+    document.getElementById('complianceResult').textContent = `=== 兆翔物业合同合规性核查报告 ===\n核查时间：${new Date().toLocaleString()}\n核查范围：2014-2026年全量合同台账\n\n【核查结果汇总】\n1. 合同总数：待统计（请导入合同数据）\n2. 合规合同数：待统计\n3. 不合规合同数：待统计\n4. 问题项汇总：\n   - 归档不及时：待核查\n   - 审批流程不完整：待核查\n   - 日期逻辑异常：待核查\n   - 金额权限不匹配：待核查\n\n【详细核查结果】\n请导入合同台账数据后，重新执行核查，系统将自动生成详细问题清单。`;
+};
 
-       // 导出合规核查报告
-       function exportComplianceReport() {
-           const result = document.getElementById('complianceResult').innerText;
-           if (!result || result.includes('请选择核查项')) {
-               alert('暂无核查报告可导出');
-               return;
-           }
-           const blob = new Blob([result], { type: 'text/plain;charset=utf-8' });
-           saveAs(blob, '合同合规性核查报告.txt');
-       }
+// 导出合规核查报告
+window.exportComplianceReport = function() {
+    const result = document.getElementById('complianceResult').innerText;
+    if (!result || result.includes('请选择核查项')) {
+        alert('暂无核查报告可导出');
+        return;
+    }
+    const blob = new Blob([result], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, '合同合规性核查报告.txt');
+};
 
-       // 价格比对功能（简化实现）
-       function priceCompare() {
-           alert('价格比对功能已触发，正在分析对应类型合同价格数据...\n\n完整价格比对功能可导入合同数据后使用，系统将自动计算均价、识别异常价格合同。');
-           document.getElementById('priceStatsGrid').innerHTML = `
-               <div class="stats-card">
-                   <span>0</span>
-                   <p>比对合同总数</p>
-               </div>
-               <div class="stats-card">
-                   <span>0</span>
-                   <p>均价</p>
-               </div>
-               <div class="stats-card">
-                   <span>0</span>
-                   <p>最高价合同</p>
-               </div>
-               <div class="stats-card">
-                   <span>0</span>
-                   <p>最低价合同</p>
-               </div>
-           `;
-       }
+// 价格比对功能（简化实现）
+window.priceCompare = function() {
+    alert('价格比对功能已触发，正在分析对应类型合同价格数据...\n\n完整价格比对功能可导入合同数据后使用，系统将自动计算均价、识别异常价格合同。');
+    document.getElementById('priceStatsGrid').innerHTML = `
+        <div class="stats-card">
+            <span>0</span>
+            <p>比对合同总数</p>
+        </div>
+        <div class="stats-card">
+            <span>0</span>
+            <p>均价</p>
+        </div>
+        <div class="stats-card">
+            <span>0</span>
+            <p>最高价合同</p>
+        </div>
+        <div class="stats-card">
+            <span>0</span>
+            <p>最低价合同</p>
+        </div>
+    `;
+};
 
-       // 导出价格分析报告
-       function exportPriceReport() {
-           alert('请先执行价格比对，生成分析结果后再导出报告');
-       }
+// 导出价格分析报告
+window.exportPriceReport = function() {
+    alert('请先执行价格比对，生成分析结果后再导出报告');
+};
 
-       // 生成审计报告
-       function generateReport() {
-           const reportTitle = document.getElementById('reportTitle').value;
-           alert(`审计报告「${reportTitle}」已生成，正在加载预览...\n\n完整报告可导入合同数据后生成，系统将自动填充统计数据、问题清单、整改建议。`);
-           document.getElementById('reportPreview').textContent = `# ${reportTitle}\n\n报告出具时间：${new Date().toLocaleString()}\n审计范围：兆翔物业2014-2026年合同管理全流程\n\n## 一、合同台账整体情况\n1. 覆盖年度：2014-2026年（13个年度）\n2. 合同总数量：待统计（请导入合同数据）\n3. 收入类合同：待统计\n4. 支出类合同：待统计\n5. 整体归档率：待统计\n\n## 二、合规性核查结果\n待导入合同数据后生成\n\n## 三、价格异常风险识别\n待导入合同数据后生成\n\n## 四、审计发现与整改建议\n待导入合同数据后生成`;
-       }
+// 生成审计报告
+window.generateReport = function() {
+    const reportTitle = document.getElementById('reportTitle').value;
+    alert(`审计报告「${reportTitle}」已生成，正在加载预览...\n\n完整报告可导入合同数据后生成，系统将自动填充统计数据、问题清单、整改建议。`);
+    document.getElementById('reportPreview').textContent = `# ${reportTitle}\n\n报告出具时间：${new Date().toLocaleString()}\n审计范围：兆翔物业2014-2026年合同管理全流程\n\n## 一、合同台账整体情况\n1. 覆盖年度：2014-2026年（13个年度）\n2. 合同总数量：待统计（请导入合同数据）\n3. 收入类合同：待统计\n4. 支出类合同：待统计\n5. 整体归档率：待统计\n\n## 二、合规性核查结果\n待导入合同数据后生成\n\n## 三、价格异常风险识别\n待导入合同数据后生成\n\n## 四、审计发现与整改建议\n待导入合同数据后生成`;
+};
 
-       // 导出PDF报告
-       function exportReportPDF() {
-           const reportContent = document.getElementById('reportPreview').textContent;
-           if (!reportContent || reportContent.includes('请选择报告内容')) {
-               alert('暂无审计报告可导出');
-               return;
-           }
-           alert('PDF导出功能已触发，正在生成文件...');
-           // 完整PDF导出可基于html2pdf.js实现，此处为演示
-           const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-           saveAs(blob, '审计报告.txt');
-       }
+// 导出PDF报告
+window.exportReportPDF = function() {
+    const reportContent = document.getElementById('reportPreview').textContent;
+    if (!reportContent || reportContent.includes('请选择报告内容')) {
+        alert('暂无审计报告可导出');
+        return;
+    }
+    alert('PDF导出功能已触发，正在生成文件...');
+    // 完整PDF导出可基于html2pdf.js实现，此处为演示
+    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, '审计报告.txt');
+};
 
-       // 导出Excel报告
-       function exportReportExcel() {
-           alert('请先生成审计报告，再导出Excel格式报告');
-       }
+// 导出Excel报告
+window.exportReportExcel = function() {
+    alert('请先生成审计报告，再导出Excel格式报告');
+};
 
-       // 底稿归档相关功能（简化实现）
-       function selectArchiveFiles() {
-           const fileInput = document.createElement('input');
-           fileInput.type = 'file';
-           fileInput.multiple = true;
-           fileInput.onchange = function(e) {
-               const files = e.target.files;
-               if (files.length === 0) return;
-               alert(`成功选择 ${files.length} 个底稿文件，可在列表中查看`);
-               // 完整文件列表渲染可基于File API实现
-           };
-           fileInput.click();
-       }
+// 底稿归档相关功能（简化实现）
+window.selectArchiveFiles = function() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.multiple = true;
+    fileInput.onchange = function(e) {
+        const files = e.target.files;
+        if (files.length === 0) return;
+        alert(`成功选择 ${files.length} 个底稿文件，可在列表中查看`);
+        // 完整文件列表渲染可基于File API实现
+    };
+    fileInput.click();
+};
 
-       function exportArchiveZip() {
-           alert('归档压缩包导出功能已触发，正在打包文件...');
-       }
+window.exportArchiveZip = function() {
+    alert('归档压缩包导出功能已触发，正在打包文件...');
+};
 
-       function clearArchiveFiles() {
-           alert('文件列表已清空');
-       }
+window.clearArchiveFiles = function() {
+    alert('文件列表已清空');
+};
 // ========== 制度比较（总结版）功能 ==========
 window.policyCompare = function() {
     const policy = document.getElementById('policyText').value.trim();
@@ -3173,6 +3182,7 @@ function generatePolicySummary(policy, contract) {
     report += `\n（注：本报告基于制度关键词自动生成，仅作为审计参考，最终结论请结合人工复核。）`;
     return report;
 }
+
 // 清空制度比较内容
 window.clearPolicyCompare = function() {
     document.getElementById('policyText').value = '';
@@ -3195,7 +3205,6 @@ window.exportPolicyReport = function() {
     const blob = new Blob([result], { type: 'text/plain;charset=utf-8' });
     saveAs(blob, fileName);
 };
-
      </script>
    </div>
 </body>
